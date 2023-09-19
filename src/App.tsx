@@ -1,50 +1,42 @@
+import { useAuth0 } from "@auth0/auth0-react";
 import React from "react";
-import { log, logWarn, logError } from "../utils/log";
-import { getAPIResponse } from "../utils/api";
+import { log } from "../utils/log";
 import { useSQLQuery } from "./hooks/useSQLQuery";
-
-// Schema of return data from API
-type Data = {
-  userId: number;
-  id: number;
-  title: string;
-  body: string;
-};
+import { getAPIResponse } from "../utils/api";
 
 const App = () => {
-  // useQuery syntax
-  //  data      = Return data from query
-  //  isLoading = true if still loading. Allows us to render conditionally
-  //  isError   = true if an error occurred during the query
-  //  queryKey  = used for caching
-  //  queryFn   = function used to actually query some API and return to useQuery
-  const { data, isLoading, isError } = useSQLQuery(["data"], async () => {
-    logWarn("Getting data from API");
-    // Sample JSON endpoint. Switch with a real API endpoint
-    const url = "https://jsonplaceholder.typicode.com/posts/1";
-    log("URL", url);
-    const { data } = await getAPIResponse({
+  log("In App.tsx");
+
+  const { loginWithRedirect, logout, isAuthenticated, isLoading } = useAuth0();
+
+  const { data, isLoading: queryLoading } = useSQLQuery(["data"], async () => {
+    const { data, error, headers } = await getAPIResponse({
       method: "GET",
-      url,
+      url: "/",
     });
-    log("Got data", data);
-    // Casting the data to our known schema before returning, for maximum type-safety
-    logWarn("Getting data from API - COMPLETE");
-    return data as Data;
+
+    if (error) throw new Error(error);
+    return data.status;
   });
+
+  log({ data });
 
   return (
     <div className="h-screen bg-blue-500 flex flex-col justify-center items-center space-y-4 text-white font-bold">
-      <h1>Welcome to React App that's built using Webpack and Babel</h1>
+      <h1>Welcome to Evercent!</h1>
 
-      <p>Version 2!</p>
-
-      {/* Conditionally rendering a loading state when the data
-          hasn't been returned yet */}
-      {isLoading ? (
-        <div>Loading data from API...</div>
+      {!isAuthenticated && !isLoading ? (
+        <button onClick={() => loginWithRedirect()}>Sign In</button>
       ) : (
-        <div>{JSON.stringify(data)}</div>
+        <button onClick={() => logout()}>Sign Out</button>
+      )}
+
+      {queryLoading ? (
+        <div>Loading data from API...</div>
+      ) : data ? (
+        <div>{data}</div>
+      ) : (
+        <div>API not working!!</div>
       )}
     </div>
   );

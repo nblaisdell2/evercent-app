@@ -7,9 +7,8 @@ import { createRoot } from "react-dom/client";
 import App from "./src/App";
 
 import { QueryClientProvider, QueryClient } from "@tanstack/react-query";
-import { log } from "./utils/log";
+import { Auth0ProviderWithNavigate } from "./src/components/Auth0WithNavigate";
 
-log("From .env", { val: process.env.TEST_VAR });
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
@@ -36,6 +35,8 @@ const queryClient = new QueryClient({
 const root = createRoot(document.getElementById("root") as Element);
 root.render(
   <QueryClientProvider client={queryClient}>
-    <App />
+    <Auth0ProviderWithNavigate>
+      <App />
+    </Auth0ProviderWithNavigate>
   </QueryClientProvider>
 );
