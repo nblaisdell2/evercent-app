@@ -1,26 +1,40 @@
-import { useAuth0 } from "@auth0/auth0-react";
 import React from "react";
-import { log } from "../utils/log";
+import { useAuth0 } from "@auth0/auth0-react";
 import { useSQLQuery } from "./hooks/useSQLQuery";
-import { getAPIResponse } from "../utils/api";
+import { useSQLMutation } from "./hooks/useSQLMutation";
+import { UserData, getAllEvercentData } from "./model/userData";
+import { Budget, FAKE_BUDGET_ID, connectToYNAB } from "./model/budget";
+import { CategoryGroup, ExcludedCategory } from "./model/category";
+import { AutoRun } from "./model/autoRun";
+import { log } from "./utils/log";
+
+export type EvercentData = {
+  userData: UserData | null;
+  budget: Budget | null;
+  categoryGroups: CategoryGroup[];
+  excludedCategories: ExcludedCategory[];
+  autoRuns: AutoRun[];
+  pastRuns: AutoRun[];
+};
 
 const App = () => {
-  log("In App.tsx");
-
   const { loginWithRedirect, logout, user, isAuthenticated, isLoading } =
     useAuth0();
 
-  const { data, isLoading: queryLoading } = useSQLQuery(["data"], async () => {
-    const { data, error, headers } = await getAPIResponse({
-      method: "GET",
-      url: "/",
-    });
+  const emailReady = !!user?.email;
 
-    if (error) throw new Error(error);
-    return data.status;
-  });
+  const { data: evercentData, isLoading: queryLoading } = useSQLQuery(
+    ["data"],
+    getAllEvercentData(user?.email),
+    emailReady
+  );
 
-  log({ data, user });
+  const { mutate: connect, error: connectError } = useSQLMutation(
+    ["connect-to-ynab"],
+    connectToYNAB(evercentData?.userData?.userID as string)
+  );
+
+  log({ evercentData, user });
 
   return (
     <div className="h-screen bg-blue-500 flex flex-col justify-center items-center space-y-4 text-white font-bold">
@@ -32,13 +46,20 @@ const App = () => {
         <button onClick={() => logout()}>Sign Out</button>
       )}
 
-      {queryLoading ? (
-        <div>Loading data from API...</div>
-      ) : data ? (
-        <div>{data}</div>
-      ) : (
-        <div>API not working!!</div>
-      )}
+      {emailReady &&
+        (queryLoading ? (
+          <div>Loading data from API...</div>
+        ) : evercentData ? (
+          <>
+            <div>{JSON.stringify(evercentData.userData)}</div>
+
+            {evercentData.userData?.budgetID == FAKE_BUDGET_ID && (
+              <button onClick={() => connect()}>Connect to YNAB</button>
+            )}
+          </>
+        ) : (
+          <div>API not working!!</div>
+        ))}
     </div>
   );
 };
