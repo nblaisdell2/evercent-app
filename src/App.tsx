@@ -7,7 +7,8 @@ import { getAPIResponse } from "../utils/api";
 const App = () => {
   log("In App.tsx");
 
-  const { loginWithRedirect, logout, isAuthenticated, isLoading } = useAuth0();
+  const { loginWithRedirect, logout, user, isAuthenticated, isLoading } =
+    useAuth0();
 
   const { data, isLoading: queryLoading } = useSQLQuery(["data"], async () => {
     const { data, error, headers } = await getAPIResponse({
@@ -19,7 +20,7 @@ const App = () => {
     return data.status;
   });
 
-  log({ data });
+  log({ data, user });
 
   return (
     <div className="h-screen bg-blue-500 flex flex-col justify-center items-center space-y-4 text-white font-bold">
