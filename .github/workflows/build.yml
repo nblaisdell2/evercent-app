@@ -61,6 +61,6 @@ jobs:
       - name: Create AWS Infrastructure
         run: bash create_aws_site.sh ${{ secrets.AWS_ACCOUNT_ID }} ${{ secrets.AWS_REGION }} ${{ secrets.SITE_URL }} ${{ secrets.SUBDOMAIN }} ${{ secrets.AWS_CERTIFICATE_ARN }}
       - name: Sync Files w/ S3 Bucket
-        run: aws s3 sync ./dist s3://${{ secrets.SUBDOMAIN }}.${{ secrets.SITE_URL }} --delete
+        run: aws s3 sync ./dist s3://${{ secrets.SITE_URL }} --delete
       - name: Invalidate CloudFront Distribution Cache
         run: aws cloudfront create-invalidation --distribution-id ${{ secrets.CLOUDFRONT_DISTRIBUTION_ID }} --paths "/*"
