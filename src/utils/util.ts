@@ -31,3 +31,15 @@ export const sum = <T>(list: T[], prop: keyof T, start: number = 0): number => {
 
 export const sleep = (ms: number) =>
   new Promise((resolve) => setTimeout(resolve, ms));
+
+export function getMoneyString(amount: number, digits: number = 0) {
+  // if (amount % 1 > 0) {
+  //   return "$" + amount.toFixed(digits);
+  // }
+  if (amount == -0) amount = 0;
+  return ("$" + amount.toFixed(digits)).replace("-", "");
+}
+
+export function getPercentString(num: number, digits: number = 0) {
+  return (num * 100).toFixed(digits) + "%";
+}

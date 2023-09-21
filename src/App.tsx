@@ -3,10 +3,12 @@ import { useAuth0 } from "@auth0/auth0-react";
 import { useSQLQuery } from "./hooks/useSQLQuery";
 import { useSQLMutation } from "./hooks/useSQLMutation";
 import { UserData, getAllEvercentData } from "./model/userData";
-import { Budget, FAKE_BUDGET_ID, connectToYNAB } from "./model/budget";
+import { Budget, connectToYNAB } from "./model/budget";
 import { CategoryGroup, ExcludedCategory } from "./model/category";
 import { AutoRun } from "./model/autoRun";
 import { log } from "./utils/log";
+import Header from "./components/Header";
+import MainContent from "./components/MainContent";
 
 export type EvercentData = {
   userData: UserData | null;
@@ -37,29 +39,10 @@ const App = () => {
   log({ evercentData, user });
 
   return (
-    <div className="h-screen bg-blue-500 flex flex-col justify-center items-center space-y-4 text-white font-bold">
-      <h1>Welcome to Evercent!</h1>
+    <div className="flex flex-col h-screen bg-primary">
+      <Header />
 
-      {!isAuthenticated && !isLoading ? (
-        <button onClick={() => loginWithRedirect()}>Sign In</button>
-      ) : (
-        <button onClick={() => logout()}>Sign Out</button>
-      )}
-
-      {emailReady &&
-        (queryLoading ? (
-          <div>Loading data from API...</div>
-        ) : evercentData ? (
-          <>
-            <div>{JSON.stringify(evercentData.userData)}</div>
-
-            {evercentData.userData?.budgetID == FAKE_BUDGET_ID && (
-              <button onClick={() => connect()}>Connect to YNAB</button>
-            )}
-          </>
-        ) : (
-          <div>API not working!!</div>
-        ))}
+      <MainContent />
     </div>
   );
 };
