@@ -18,12 +18,15 @@ const DotenvPluginConfig = new Dotenv();
 /*We are basically telling webpack to take index.js from entry. Then check for all file extensions in resolve. 
 After that apply all the rules in module.rules and produce the output and place it in main.js in the public folder.*/
 
+const isDevelopment =
+  process.env.NODE_ENV !== "production" && process.env.NODE_ENV !== "test";
+
 module.exports = {
   /** "mode"
    * the environment - development, production, none. tells webpack
    * to use its built-in optimizations accordingly. default is production
    */
-  mode: "development",
+  mode: isDevelopment ? "development" : "production",
   /** "entry"
    * the entry point
    */
@@ -43,8 +46,8 @@ module.exports = {
     HTMLWebpackPluginConfig,
     NodePolyfillPluginConfig,
     DotenvPluginConfig,
-    new ReactRefreshWebpackPlugin(),
-  ],
+    isDevelopment && new ReactRefreshWebpackPlugin(),
+  ].filter(Boolean),
   /** "target"
    * setting "node" as target app (server side), and setting it as "web" is
    * for browser (client side). Default is "web"
