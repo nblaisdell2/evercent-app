@@ -1,5 +1,5 @@
-import { CheckIcon, MinusIcon } from "@heroicons/react/24/outline";
 import React from "react";
+import MyIcon from "./MyIcon";
 
 function MyCheckbox({
   selected,
@@ -29,9 +29,15 @@ function MyCheckbox({
       }`}
     >
       {isDet && !isAll && !parentIsHovered ? (
-        <MinusIcon className={`h-4 w-4 text-white stroke-2`} />
+        <MyIcon
+          iconType={"MinusIcon"}
+          className={`h-4 w-4 text-white stroke-2`}
+        />
       ) : (
-        <CheckIcon className={`h-4 w-4 text-white stroke-2`} />
+        <MyIcon
+          iconType={"CheckMark"}
+          className={`h-4 w-4 text-white stroke-2`}
+        />
       )}
     </div>
   );

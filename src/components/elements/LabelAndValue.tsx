@@ -6,6 +6,7 @@ type Props = {
   value: any;
   classNameLabel?: string;
   classNameValue?: string;
+  classNameValueColor?: string;
 };
 
 function LabelAndValue({
@@ -13,6 +14,7 @@ function LabelAndValue({
   value,
   classNameLabel,
   classNameValue,
+  classNameValueColor,
 }: Props) {
   return (
     <div className="flex flex-col items-center">
@@ -23,9 +25,9 @@ function LabelAndValue({
         }`}
       />
       <div
-        className={`${
-          classNameValue || ""
-        } text-color-primary font-bold -mt-2  `}
+        className={`${classNameValue || ""} font-bold -mt-2 ${
+          classNameValueColor || "text-color-primary"
+        }`}
       >
         {value}
       </div>

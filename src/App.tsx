@@ -1,17 +1,19 @@
-import React from "react";
+import React, { useState } from "react";
 import { useAuth0 } from "@auth0/auth0-react";
 import { useSQLQuery } from "./hooks/useSQLQuery";
-import { useSQLMutation } from "./hooks/useSQLMutation";
+import { log } from "./utils/log";
+
 import { UserData, getAllEvercentData } from "./model/userData";
-import { Budget, connectToYNAB } from "./model/budget";
+import { Budget } from "./model/budget";
 import { CategoryGroup, ExcludedCategory } from "./model/category";
 import { AutoRun } from "./model/autoRun";
-import { log } from "./utils/log";
-import Header from "./components/Header";
+
 import MainContent from "./components/MainContent";
+import LoadingScreen from "./components/other/LoadingScreen";
+import Header from "./components/Header";
 
 export type EvercentData = {
-  userData: UserData | null;
+  userData: UserData;
   budget: Budget | null;
   categoryGroups: CategoryGroup[];
   excludedCategories: ExcludedCategory[];
@@ -19,11 +21,11 @@ export type EvercentData = {
   pastRuns: AutoRun[];
 };
 
-const App = () => {
-  const { loginWithRedirect, logout, user, isAuthenticated, isLoading } =
-    useAuth0();
+function App() {
+  const { user, isAuthenticated, isLoading } = useAuth0();
 
   const emailReady = !!user?.email;
+  log("emailReady", emailReady);
 
   const { data: evercentData, isLoading: queryLoading } = useSQLQuery(
     ["data"],
@@ -31,20 +33,17 @@ const App = () => {
     emailReady
   );
 
-  const { mutate: connect, error: connectError } = useSQLMutation(
-    ["connect-to-ynab"],
-    connectToYNAB(evercentData?.userData?.userID as string)
-  );
-
   log({ evercentData, user });
 
+  if (isLoading || (isAuthenticated && queryLoading)) return <LoadingScreen />;
+
   return (
-    <div className="flex flex-col h-screen bg-primary">
-      <Header />
+    <div className={`flex flex-col h-screen bg-primary`}>
+      <Header userData={evercentData?.userData} budget={evercentData?.budget} />
 
       <MainContent />
     </div>
   );
-};
+}
 
 export default App;

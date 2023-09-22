@@ -1,6 +1,6 @@
 import React from "react";
-import LabelAndValue from "./elements/LabelAndValue";
-import { getMoneyString } from "../utils/util";
+import LabelAndValue from "../../elements/LabelAndValue";
+import { getMoneyString } from "../../../utils/util";
 
 function Amounts() {
   const totalAmountUsed = 0; //getTotalAmountUsed(categoryList);
@@ -19,8 +19,9 @@ function Amounts() {
           <LabelAndValue
             label={"Monthly Income"}
             value={getMoneyString(monthlyIncome)}
-            classNameLabel={"text-sm sm:text-xl"}
-            classNameValue={"text-2xl sm:text-3xl text-green-500"}
+            classNameLabel={"text-xl"}
+            classNameValue={"text-3xl"}
+            classNameValueColor={"text-green-500"}
           />
         </div>
       </div>

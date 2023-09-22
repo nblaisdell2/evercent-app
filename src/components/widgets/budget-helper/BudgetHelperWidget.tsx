@@ -1,8 +1,8 @@
 import React from "react";
-import { getPercentString } from "../utils/util";
-import { CategoryGroup } from "../model/category";
 import Amounts from "./Amounts";
 import BudgetHelperCharts from "./BudgetHelperCharts";
+import { CategoryGroup } from "../../../model/category";
+import { getPercentString } from "../../../utils/util";
 
 const CHART_COLORS = [
   "#3366cc",
@@ -38,7 +38,11 @@ const CHART_COLORS = [
   "#743411",
 ];
 
-function BudgetHelperWidget() {
+function BudgetHelperWidget({
+  categoryGroups,
+}: {
+  categoryGroups: CategoryGroup[];
+}) {
   const getLegendGrid = (catList: CategoryGroup[], numRows: number) => {
     const percUnused = 0;
     // catList.reduce((prev, curr) => {
@@ -115,16 +119,12 @@ function BudgetHelperWidget() {
     );
   };
 
-  const categoryList: any[] = [];
-  const categoriesWithAmounts = categoryList.filter(
-    (grp) => grp.adjustedAmtPlusExtra > 0
+  const categoriesWithAmounts = categoryGroups.filter(
+    (grp) => grp.adjustedAmountPlusExtra > 0
   );
 
   return (
-    <div className="p-2 flex flex-col">
-      <div className="font-cinzel text-center text-3xl text-color-primary mb-2">
-        Budget Helper
-      </div>
+    <div className="h-full flex flex-col">
       <div className="sm:mb-1">
         <Amounts />
       </div>

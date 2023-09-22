@@ -10,6 +10,18 @@
     @apply bg-[#F6F9FA] dark:bg-[#373737]
 }
 
+.color-accent {
+    @apply bg-blue-900 dark:bg-purple-800
+}
+
+.color-accent-secondary {
+    @apply bg-blue-400 dark:bg-purple-500
+}
+
+.color-accent-hover {
+    @apply hover:bg-blue-300 dark:hover:bg-purple-300 dark:hover:text-black
+}
+
 .text-color-primary {
     @apply text-black dark:text-[#F6F9FA]
 }

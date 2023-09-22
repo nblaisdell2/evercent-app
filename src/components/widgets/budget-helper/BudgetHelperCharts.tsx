@@ -4,8 +4,8 @@ import Chart, {
   GoogleDataTable,
   ReactGoogleChartEvent,
 } from "react-google-charts";
-import { getMoneyString } from "../utils/util";
-import { CategoryGroup } from "../model/category";
+import { getMoneyString } from "../../../utils/util";
+import { CategoryGroup } from "../../../model/category";
 
 const CHART_COLORS = [
   "#3366cc",

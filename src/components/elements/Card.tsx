@@ -1,9 +1,18 @@
 import React from "react";
 
-function Card({ children, className }: { children?: any; className?: string }) {
+function Card({
+  onClick,
+  children,
+  className,
+}: {
+  onClick?: React.MouseEventHandler<HTMLDivElement>;
+  children?: any;
+  className?: string;
+}) {
   return (
     <div
-      className={`bg-secondary rounded-xl shadow-md shadow-slate-400 dark:shadow-black overflow-y-auto ${
+      onClick={onClick}
+      className={`bg-secondary  rounded-xl shadow-md shadow-slate-400 dark:shadow-black border-t border-gray-300 dark:border-black overflow-y-auto ${
         className || ""
       }`}
     >

@@ -12,35 +12,36 @@ export function useSQLMutation<TDataQuery, TDataOutput>(
 ) {
   const queryClient = useQueryClient();
 
-  const { mutate, isError } = useMutation<TDataOutput, unknown, void, unknown>(
-    mutationKeys,
-    mutationFn,
-    {
-      onSettled: async (newData, error, variables, context) => {
-        if (queryKey) {
-          // Cancel any outgoing refetches
-          // (so they don't overwrite our optimistic update)
-          await queryClient.cancelQueries({ queryKey });
+  const { mutate, isError, data } = useMutation<
+    TDataOutput,
+    unknown,
+    void,
+    unknown
+  >(mutationKeys, mutationFn, {
+    onSettled: async (newData, error, variables, context) => {
+      if (queryKey) {
+        // Cancel any outgoing refetches
+        // (so they don't overwrite our optimistic update)
+        await queryClient.cancelQueries({ queryKey });
 
-          // Snapshot the previous value
-          const prevData = queryClient.getQueryData(queryKey);
+        // Snapshot the previous value
+        const prevData = queryClient.getQueryData(queryKey);
 
-          if (error) {
-            queryClient.setQueryData(queryKey, prevData);
-          } else {
-            if (updateFn) queryClient.setQueryData(queryKey, updateFn);
-          }
-
-          if (invalidateQuery) {
-            await queryClient.invalidateQueries({ queryKey });
-          }
+        if (error) {
+          queryClient.setQueryData(queryKey, prevData);
+        } else {
+          if (updateFn) queryClient.setQueryData(queryKey, updateFn);
         }
-      },
-    }
-  );
+
+        if (invalidateQuery) {
+          await queryClient.invalidateQueries({ queryKey });
+        }
+      }
+    },
+  });
 
   const [foundError, setFoundError] = useState(false);
-  
+
   useEffect(() => {
     if (queryKey && isError) {
       const timer = window.setTimeout(() => {
@@ -57,5 +58,5 @@ export function useSQLMutation<TDataQuery, TDataOutput>(
     }
   }, [isError]);
 
-  return { mutate: mutate, error: foundError };
+  return { mutate: mutate, error: foundError, data };
 }

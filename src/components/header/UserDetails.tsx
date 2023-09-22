@@ -1,22 +1,10 @@
 import React from "react";
-
-import { PencilSquareIcon } from "@heroicons/react/24/outline";
-
-import LabelAndValue from "./elements/LabelAndValue";
-import { getMoneyString } from "../utils/util";
-import { PayFrequency } from "../model/userData";
-// import { UserData } from "../../../utils/evercent";
-// import useModal from "../../hooks/useModal";
-// import {
-//   formatDate,
-//   getMoneyString,
-//   ModalType,
-//   parseDate,
-// } from "../../../utils/utils";
-// import ModalContent from "../../modal/ModalContent";
-// import UpdateUserDetailsModal from "../../modal/UpdateUserDetailsModal";
-// import LabelAndValue from "../../elements/LabelAndValue";
-// import { QueryLoadingState } from "../../hooks/useEvercent";
+import useModal from "../../hooks/useModal";
+import { PayFrequency } from "../../model/userData";
+import { getMoneyString } from "../../utils/util";
+import LabelAndValue from "../elements/LabelAndValue";
+import MyIcon from "../elements/MyIcon";
+import ModalContent from "../modals/ModalContent";
 
 function UserDetails() {
   // }
@@ -29,7 +17,7 @@ function UserDetails() {
   //   updateUserData: (newUserData: UserData) => Promise<void>;
   //   queryLoading: QueryLoadingState;
   // }) {
-  // const { isOpen, showModal, closeModal } = useModal();
+  const { isOpen, showModal, closeModal } = useModal();
 
   // const { monthlyIncome, nextPaydate, payFrequency } = userData;
   // const daysAwayFromPayday = differenceInDays(
@@ -51,7 +39,8 @@ function UserDetails() {
             label={"Monthly Income"}
             value={getMoneyString(monthlyIncome)}
             classNameLabel={"text-sm sm:text-md"}
-            classNameValue={"text-xl text-green-500"}
+            classNameValue={"text-xl"}
+            classNameValueColor={"text-green-500"}
           />
         </div>
 
@@ -114,25 +103,22 @@ function UserDetails() {
         <div className="w-[1px] h-full bg-gray-400" />
 
         {/* Edit Icon */}
-        <PencilSquareIcon
-          className="h-6 w-6 sm:h-8 sm:w-8 -mr-1 sm:mr-0 stroke-2 hover:cursor-pointer"
-          // onClick={showModal}
+        <MyIcon
+          iconType={"EditIcon"}
+          className="text-color-primary h-6 w-6 sm:h-8 sm:w-8 -mr-1 sm:mr-0 stroke-2 hover:cursor-pointer"
+          onClick={showModal}
         />
       </div>
 
-      {/* {isOpen && (
+      {isOpen && (
         <ModalContent
-          modalContentID={ModalType.USER_DETAILS}
+          fullScreen={false}
+          modalTitle={"User Details"}
           onClose={closeModal}
         >
-          <UpdateUserDetailsModal
-            userData={userData}
-            queryLoading={queryLoading}
-            updateUserData={updateUserData}
-            closeModal={closeModal}
-          />
+          <div>UserDetails go here</div>
         </ModalContent>
-      )} */}
+      )}
     </>
   );
 }

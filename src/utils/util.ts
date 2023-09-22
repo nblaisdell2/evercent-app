@@ -41,5 +41,6 @@ export function getMoneyString(amount: number, digits: number = 0) {
 }
 
 export function getPercentString(num: number, digits: number = 0) {
+  if (isNaN(num)) num = 0;
   return (num * 100).toFixed(digits) + "%";
 }

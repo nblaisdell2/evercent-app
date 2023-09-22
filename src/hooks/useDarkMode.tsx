@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { log } from "../utils/log";
 
 /*
 =============================
@@ -23,16 +24,16 @@ const DO_NOT_USE_DARK_MODE = "0";
 
 export function useDarkMode() {
   // Grab the value set in localStorage for this key (maybe null, but always a string)
+  const [useDarkMode, setUseDarkMode] = useState(false);
   const [darkMode, setDarkMode] = useState(localStorage.getItem(DARK_MODE));
 
-  // Then, let's return a boolean value, for ease of use, rather than working with a string or number
-  // If the value is null, the default is still set, so return false for using light mode.
-  // If the value is "0", we'll still be using light mode.
-  // Otherwise, if the value is "1", we'll set "useDarkMode = true"
-  let useDarkMode = false;
-  if (darkMode && darkMode == USE_DARK_MODE) {
-    useDarkMode = true;
-  }
+  // // Then, let's return a boolean value, for ease of use, rather than working with a string or number
+  // // If the value is null, the default is still set, so return false for using light mode.
+  // // If the value is "0", we'll still be using light mode.
+  // // Otherwise, if the value is "1", we'll set "useDarkMode = true"
+  // if (darkMode && darkMode == USE_DARK_MODE) {
+  //   setUseDarkMode(true);
+  // }
 
   // Create a toggle function which updates our local state accordingly
   //   ** This will also trigger the useEffect below
@@ -50,6 +51,7 @@ export function useDarkMode() {
   // in localStorage will be updated
   useEffect(() => {
     if (darkMode) localStorage.setItem(DARK_MODE, darkMode);
+    setUseDarkMode(darkMode != null && darkMode == USE_DARK_MODE);
   }, [darkMode]);
 
   // Simply return a true/false for using dark mode, and a function which allows us to

@@ -7,7 +7,8 @@ import { createRoot } from "react-dom/client";
 import App from "./src/App";
 
 import { QueryClientProvider, QueryClient } from "@tanstack/react-query";
-import { Auth0ProviderWithNavigate } from "./src/components/Auth0WithNavigate";
+import { Auth0ProviderWithNavigate } from "./src/components/other/Auth0WithNavigate";
+import { log } from "./src/utils/log";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -32,7 +33,7 @@ const queryClient = new QueryClient({
   },
 });
 
-const root = createRoot(document.getElementById("root") as Element);
+let root = createRoot(document.getElementById("root") as Element);
 root.render(
   <QueryClientProvider client={queryClient}>
     <Auth0ProviderWithNavigate>
