@@ -5,6 +5,8 @@ const Dotenv = require("dotenv-webpack");
 
 const ReactRefreshWebpackPlugin = require("@pmmmwh/react-refresh-webpack-plugin");
 
+const CopyPlugin = require("copy-webpack-plugin");
+
 // Needed to run locally
 const HTMLWebpackPluginConfig = new HtmlWebpackPlugin({
   template: __dirname + "/public/index.html",
@@ -46,6 +48,9 @@ module.exports = {
     HTMLWebpackPluginConfig,
     NodePolyfillPluginConfig,
     DotenvPluginConfig,
+    new CopyPlugin({
+      patterns: ["public/*.png"],
+    }),
     isDevelopment && new ReactRefreshWebpackPlugin(),
   ].filter(Boolean),
   /** "target"

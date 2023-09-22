@@ -12,7 +12,7 @@ function MainHeader() {
     <div className="color-accent text-white text-xl font-cinzel py-1 flex justify-between items-center">
       <div className="flex items-center ml-5">
         <div className="h-10 w-10 relative">
-          <img src="/evercent_logo.png" />
+          <img src="public/evercent_logo.png" />
         </div>
         <div className="ml-1">EverCent</div>
       </div>
