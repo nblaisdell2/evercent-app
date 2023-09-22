@@ -6,7 +6,7 @@ import LabelAndValue from "../elements/LabelAndValue";
 import MyIcon from "../elements/MyIcon";
 import ModalContent from "../modals/ModalContent";
 
-function UserDetails() {
+function UserDetails({ isLoading }: { isLoading: boolean }) {
   // }
   // function UserDetails({
   //   userData,
@@ -38,6 +38,7 @@ function UserDetails() {
           <LabelAndValue
             label={"Monthly Income"}
             value={getMoneyString(monthlyIncome)}
+            isLoading={isLoading}
             classNameLabel={"text-sm sm:text-md"}
             classNameValue={"text-xl"}
             classNameValueColor={"text-green-500"}
@@ -52,6 +53,7 @@ function UserDetails() {
           <LabelAndValue
             label={"Pay Frequency"}
             value={monthlyIncome == 0 ? "----" : payFrequency}
+            isLoading={isLoading}
             classNameLabel={"text-sm sm:text-md"}
             classNameValue={"text-md"}
           />
@@ -94,20 +96,25 @@ function UserDetails() {
                 </div>
               </>
             }
+            isLoading={isLoading}
             classNameLabel={"text-sm sm:text-md"}
             classNameValue={"text-md"}
           />
         </div>
 
-        {/* Vertical Divider */}
-        <div className="w-[1px] h-full bg-gray-400" />
+        {!isLoading && (
+          <>
+            {/* Vertical Divider */}
+            <div className="w-[1px] h-full bg-gray-400" />
 
-        {/* Edit Icon */}
-        <MyIcon
-          iconType={"EditIcon"}
-          className="text-color-primary h-6 w-6 sm:h-8 sm:w-8 -mr-1 sm:mr-0 stroke-2 hover:cursor-pointer"
-          onClick={showModal}
-        />
+            {/* Edit Icon */}
+            <MyIcon
+              iconType={"EditIcon"}
+              className="text-color-primary h-6 w-6 sm:h-8 sm:w-8 -mr-1 sm:mr-0 stroke-2 hover:cursor-pointer"
+              onClick={showModal}
+            />
+          </>
+        )}
       </div>
 
       {isOpen && (

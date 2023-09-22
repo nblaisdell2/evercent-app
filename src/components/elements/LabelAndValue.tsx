@@ -1,9 +1,11 @@
 import React from "react";
 import Label from "./Label";
+import TextLoader from "../other/TextLoader";
 
 type Props = {
   label: any;
   value: any;
+  isLoading?: boolean;
   classNameLabel?: string;
   classNameValue?: string;
   classNameValueColor?: string;
@@ -12,6 +14,7 @@ type Props = {
 function LabelAndValue({
   label,
   value,
+  isLoading,
   classNameLabel,
   classNameValue,
   classNameValueColor,
@@ -29,7 +32,11 @@ function LabelAndValue({
           classNameValueColor || "text-color-primary"
         }`}
       >
-        {value}
+        {isLoading !== undefined && isLoading ? (
+          <TextLoader />
+        ) : (
+          <div>{value}</div>
+        )}
       </div>
     </div>
   );

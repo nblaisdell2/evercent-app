@@ -6,11 +6,16 @@ import MyIcon from "../elements/MyIcon";
 import Label from "../elements/Label";
 import ModalContent from "../modals/ModalContent";
 import BudgetsListModal from "../modals/BudgetsListModal";
+import SkeletonLoader from "tiny-skeleton-loader-react";
+
+import LabelAndValue from "../elements/LabelAndValue";
 
 function YNABConnection({
+  isLoading,
   userID,
   budget,
 }: {
+  isLoading: boolean;
   userID: string;
   budget: Budget | null | undefined;
 }) {
@@ -26,8 +31,14 @@ function YNABConnection({
   };
 
   return (
-    <div className="ml-5">
-      {!budget ? (
+    <div className="ml-5 min-w-[250px]">
+      {isLoading ? (
+        <LabelAndValue
+          label={"Current Budget"}
+          value={"Test"}
+          isLoading={isLoading}
+        />
+      ) : !budget ? (
         <div className="flex flex-col sm:flex-row items-center text-color-primary">
           <div className="block sm:hidden text-center font-semibold text-xl">
             <div className="mb-4 px-6">
@@ -54,7 +65,7 @@ function YNABConnection({
         </div>
       ) : (
         <>
-          <div className="text-center ml-4">
+          <div className="text-center">
             <Label label={"Current Budget"} className={"text-lg"} />
             <div className="flex justify-center space-x-1 -mt-[1px]">
               <div className="font-bold text-color-primary">{budget.name}</div>

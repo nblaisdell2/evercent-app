@@ -14,6 +14,10 @@
     @apply bg-blue-900 dark:bg-purple-800
 }
 
+.text-color-accent {
+    @apply text-blue-900 dark:bg-purple-800
+}
+
 .color-accent-secondary {
     @apply bg-blue-400 dark:bg-purple-500
 }

@@ -52,7 +52,7 @@ module.exports = {
     NodePolyfillPluginConfig,
     DotenvPluginConfig,
     new CopyPlugin({
-      patterns: ["public/*.png"],
+      patterns: [{ from: "public/*.png", noErrorOnMissing: true }],
     }),
     isDevelopment && ReactRefreshWebpackPluginConfig,
   ].filter(Boolean),

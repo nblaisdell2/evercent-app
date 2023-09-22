@@ -10,6 +10,8 @@ import BudgetAutomationWidget from "./widgets/budget-automation/BudgetAutomation
 import RegularExpensesWidget from "./widgets/regular-expenses/RegularExpensesWidget";
 import UpcomingExpensesWidget from "./widgets/upcoming-expenses/UpcomingExpensesWidget";
 
+import WidgetLoader from "./other/WidgetLoader";
+
 const categoryGroups = [
   {
     groupID: "6F6D2CA7-3FDD-4850-9EEB-340917DE6855",
@@ -1025,7 +1027,7 @@ const categoryGroups = [
   },
 ];
 
-function MainContent() {
+function MainContent({ isLoading }: { isLoading: boolean }) {
   const { isAuthenticated } = useAuth0();
 
   const createWidget = (
@@ -1044,7 +1046,12 @@ function MainContent() {
           <div className="font-cinzel text-center text-3xl text-color-primary mb-2">
             {name}
           </div>
-          <div className="flex-grow">{widgetComponent}</div>
+
+          {isLoading ? (
+            <WidgetLoader />
+          ) : (
+            <div className="flex-grow">{widgetComponent}</div>
+          )}
         </Card>
 
         {isOpen && (

@@ -22,7 +22,7 @@ export type EvercentData = {
 };
 
 function App() {
-  const { user, isAuthenticated, isLoading } = useAuth0();
+  const { user, isLoading } = useAuth0();
 
   const emailReady = !!user?.email;
   log("emailReady", emailReady);
@@ -35,13 +35,17 @@ function App() {
 
   log({ evercentData, user });
 
-  if (isLoading || (isAuthenticated && queryLoading)) return <LoadingScreen />;
+  if (isLoading) return <LoadingScreen />;
 
   return (
     <div className={`flex flex-col h-screen bg-primary`}>
-      <Header userData={evercentData?.userData} budget={evercentData?.budget} />
+      <Header
+        isLoading={queryLoading}
+        userData={evercentData?.userData}
+        budget={evercentData?.budget}
+      />
 
-      <MainContent />
+      <MainContent isLoading={queryLoading} />
     </div>
   );
 }
