@@ -1,51 +1,26 @@
-import React, { useState } from "react";
+import React, { useEffect } from "react";
 import { useAuth0 } from "@auth0/auth0-react";
-import { useSQLQuery } from "./hooks/useSQLQuery";
 import { log } from "./utils/log";
-
-import { UserData, getAllEvercentData } from "./model/userData";
-import { Budget } from "./model/budget";
-import { CategoryGroup, ExcludedCategory } from "./model/category";
-import { AutoRun } from "./model/autoRun";
 
 import MainContent from "./components/MainContent";
 import LoadingScreen from "./components/other/LoadingScreen";
 import Header from "./components/Header";
-
-export type EvercentData = {
-  userData: UserData;
-  budget: Budget | null;
-  categoryGroups: CategoryGroup[];
-  excludedCategories: ExcludedCategory[];
-  autoRuns: AutoRun[];
-  pastRuns: AutoRun[];
-};
+import useEvercent from "./hooks/useEvercent";
 
 function App() {
-  const { user, isLoading } = useAuth0();
+  log("RENDERING [App.tsx]");
 
-  const emailReady = !!user?.email;
-  log("emailReady", emailReady);
-
-  const { data: evercentData, isLoading: queryLoading } = useSQLQuery(
-    ["data"],
-    getAllEvercentData(user?.email),
-    emailReady
-  );
-
-  log({ evercentData, user });
-
+  const { isLoading } = useAuth0();
   if (isLoading) return <LoadingScreen />;
 
   return (
-    <div className={`flex flex-col h-screen bg-primary`}>
-      <Header
-        isLoading={queryLoading}
-        userData={evercentData?.userData}
-        budget={evercentData?.budget}
-      />
-
-      <MainContent isLoading={queryLoading} />
+    <div className={`flex flex-col h-screen bg-primary text-color-primary`}>
+      <div>
+        <Header />
+      </div>
+      <div className="flex-grow">
+        <MainContent />
+      </div>
     </div>
   );
 }

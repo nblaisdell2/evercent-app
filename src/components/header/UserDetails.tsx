@@ -1,34 +1,40 @@
 import React from "react";
 import useModal from "../../hooks/useModal";
-import { PayFrequency } from "../../model/userData";
 import { getMoneyString } from "../../utils/util";
 import LabelAndValue from "../elements/LabelAndValue";
 import MyIcon from "../elements/MyIcon";
 import ModalContent from "../modals/ModalContent";
+import { differenceInDays, startOfToday, parseISO, format } from "date-fns";
+import UpdateUserDetailsModal from "../modals/UpdateUserDetailsModal";
+import { UserData } from "../../model/userData";
+import { log } from "../../utils/log";
 
-function UserDetails({ isLoading }: { isLoading: boolean }) {
-  // }
-  // function UserDetails({
-  //   userData,
-  //   updateUserData,
-  //   queryLoading,
-  // }: {
-  //   userData: UserData;
-  //   updateUserData: (newUserData: UserData) => Promise<void>;
-  //   queryLoading: QueryLoadingState;
-  // }) {
+function UserDetails({
+  userData,
+  isLoading,
+}: {
+  userData: UserData | undefined;
+  isLoading: boolean;
+}) {
   const { isOpen, showModal, closeModal } = useModal();
 
-  // const { monthlyIncome, nextPaydate, payFrequency } = userData;
-  // const daysAwayFromPayday = differenceInDays(
-  //   parseDate(nextPaydate),
-  //   startOfToday()
-  // );
+  const getUserData = (userData: UserData | undefined) => {
+    if (!userData)
+      return {
+        monthlyIncome: 0,
+        nextPaydate: new Date().toISOString(),
+        payFrequency: "",
+      };
+    return userData;
+  };
 
-  const monthlyIncome: number = 123.45;
-  const payFrequency: PayFrequency = "Every 2 Weeks";
-  const nextPaydate: string = new Date().toISOString();
-  const daysAwayFromPayday: number = 3;
+  const { monthlyIncome, nextPaydate, payFrequency } = getUserData(userData);
+  const daysAwayFromPayday = differenceInDays(
+    parseISO(nextPaydate),
+    startOfToday()
+  );
+
+  const formattedDate = format(parseISO(nextPaydate), "MM/dd/yyyy");
 
   return (
     <>
@@ -71,7 +77,7 @@ function UserDetails({ isLoading }: { isLoading: boolean }) {
                 <div className="hidden sm:block font-bold text-sm sm:text-base">
                   {monthlyIncome == 0
                     ? "----"
-                    : nextPaydate +
+                    : formattedDate +
                       " (" +
                       daysAwayFromPayday +
                       " " +
@@ -83,7 +89,7 @@ function UserDetails({ isLoading }: { isLoading: boolean }) {
                     "----"
                   ) : (
                     <div>
-                      <div>{nextPaydate}</div>
+                      <div>{formattedDate}</div>
                       <div className="text-xs sm:text-base -mt-1 sm:mt-0">
                         {"(" +
                           daysAwayFromPayday +
@@ -110,7 +116,7 @@ function UserDetails({ isLoading }: { isLoading: boolean }) {
             {/* Edit Icon */}
             <MyIcon
               iconType={"EditIcon"}
-              className="text-color-primary h-6 w-6 sm:h-8 sm:w-8 -mr-1 sm:mr-0 stroke-2 hover:cursor-pointer"
+              className=" h-6 w-6 sm:h-8 sm:w-8 -mr-1 sm:mr-0 stroke-2 hover:cursor-pointer"
               onClick={showModal}
             />
           </>
@@ -123,7 +129,10 @@ function UserDetails({ isLoading }: { isLoading: boolean }) {
           modalTitle={"User Details"}
           onClose={closeModal}
         >
-          <div>UserDetails go here</div>
+          <UpdateUserDetailsModal
+            userData={userData as UserData}
+            closeModal={closeModal}
+          />
         </ModalContent>
       )}
     </>

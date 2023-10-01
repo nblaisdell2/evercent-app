@@ -14,12 +14,12 @@ function MyToggleButton({
   onToggle,
 }: Props) {
   return (
-    <div className="flex border-2 border-blue-900 rounded-md font-bold text-sm sm:text-base">
+    <div className="flex border-2 border-color-accent rounded-md font-bold text-sm sm:text-base">
       <div
         className={`p-[3px] w-auto min-w-[80px] px-2 text-center whitespace-nowrap hover:cursor-pointer ${
           leftSideTrue
-            ? "bg-blue-900 hover:bg-blue-900 text-white hover:text-white font-bold hover:font-bold"
-            : "hover:bg-blue-900 hover:opacity-70 hover:text-white hover:font-bold"
+            ? "color-accent text-white font-bold hover:font-bold"
+            : "hover:bg-blue-900 dark:hover:bg-purple-800  hover:opacity-70 hover:text-white hover:font-bold"
         }`}
         onClick={() => onToggle(true)}
       >
@@ -28,8 +28,8 @@ function MyToggleButton({
       <div
         className={`p-[3px] w-auto whitespace-nowrap min-w-[80px] px-2 text-center hover:cursor-pointer ${
           !leftSideTrue
-            ? "bg-blue-900 hover:bg-blue-900 text-white hover:text-white font-bold hover:font-bold"
-            : "hover:bg-blue-900 hover:opacity-70 hover:text-white hover:font-bold"
+            ? "color-accent font-bold text-white hover:font-bold"
+            : "hover:bg-blue-900 dark:hover:bg-purple-800 hover:opacity-70 hover:text-white hover:font-bold"
         }`}
         onClick={() => onToggle(false)}
       >

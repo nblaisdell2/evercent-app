@@ -1,1041 +1,68 @@
-import React, { ReactNode } from "react";
+import React, { Dispatch, SetStateAction, cloneElement, useState } from "react";
 import Card from "./elements/Card";
 import ModalContent from "./modals/ModalContent";
 import useModal from "../hooks/useModal";
-import { Category } from "../model/category";
 import { useAuth0 } from "@auth0/auth0-react";
 import SignInMessage from "./other/SignInMessage";
 import BudgetHelperWidget from "./widgets/budget-helper/BudgetHelperWidget";
+
+import WidgetLoader from "./other/WidgetLoader";
+import { FAKE_BUDGET_ID } from "../model/budget";
+import { YNABConnectButton } from "./header/YNABConnection";
+import BudgetHelperFull from "./widgets/budget-helper/BudgetHelperFull";
+import { log } from "../utils/log";
+import UnsavedChangesModal from "./modals/UnsavedChangesModal";
+import useEvercent from "../hooks/useEvercent";
 import BudgetAutomationWidget from "./widgets/budget-automation/BudgetAutomationWidget";
 import RegularExpensesWidget from "./widgets/regular-expenses/RegularExpensesWidget";
 import UpcomingExpensesWidget from "./widgets/upcoming-expenses/UpcomingExpensesWidget";
 
-import WidgetLoader from "./other/WidgetLoader";
+export type WidgetProps = {
+  widgetMadeChanges: boolean;
+  setWidgetMadeChanges: Dispatch<SetStateAction<boolean>>;
+  setOnSaveFn: Dispatch<SetStateAction<(() => void) | undefined>>;
+};
 
-const categoryGroups = [
-  {
-    groupID: "6F6D2CA7-3FDD-4850-9EEB-340917DE6855",
-    groupName: "Debt Payments",
-    amount: 0,
-    extraAmount: 0,
-    adjustedAmount: 0,
-    adjustedAmountPlusExtra: 0,
-    categories: [
-      {
-        guid: "BFAF479B-9029-4160-BD3D-BCA9CC72FDF6",
-        categoryGroupID: "6F6D2CA7-3FDD-4850-9EEB-340917DE6855",
-        categoryID: "0D4C1931-0C35-431B-B1CF-C320C6D711A2",
-        name: "Nelnet School Loan (next pymt - June 24th 2022)",
-        amount: 0,
-        extraAmount: 0,
-        adjustedAmount: 0,
-        adjustedAmountPlusExtra: 0,
-        regularExpenseDetails: null,
-        upcomingDetails: null,
-        monthsAhead: 0,
-        postingMonths: [],
-      },
-    ],
-  },
-  {
-    groupID: "63A41D14-6D59-4578-B495-4B7E4BF59FCA",
-    groupName: "Immediate Obligations",
-    amount: 700,
-    extraAmount: 0,
-    adjustedAmount: 700,
-    adjustedAmountPlusExtra: 700,
-    categories: [
-      {
-        guid: "E8A989AF-DD2E-4A2D-B685-09328DCC9BDC",
-        categoryGroupID: "63A41D14-6D59-4578-B495-4B7E4BF59FCA",
-        categoryID: "AD8DE959-2290-458C-86ED-5491E8994749",
-        name: "Rent/Mortgage",
-        amount: 500,
-        extraAmount: 0,
-        adjustedAmount: 500,
-        adjustedAmountPlusExtra: 500,
-        regularExpenseDetails: null,
-        upcomingDetails: null,
-        monthsAhead: 0,
-        postingMonths: [],
-      },
-      {
-        guid: "C8B2B93D-178F-490F-A4F7-7C576EF28F62",
-        categoryGroupID: "63A41D14-6D59-4578-B495-4B7E4BF59FCA",
-        categoryID: "BC276698-BD2B-46DF-9262-DC1E6882C686",
-        name: "Groceries",
-        amount: 200,
-        extraAmount: 0,
-        adjustedAmount: 200,
-        adjustedAmountPlusExtra: 200,
-        regularExpenseDetails: null,
-        upcomingDetails: null,
-        monthsAhead: 0,
-        postingMonths: [],
-      },
-      {
-        guid: "E83AD356-BEDA-4065-8B1D-04B82A77CEFF",
-        categoryGroupID: "63A41D14-6D59-4578-B495-4B7E4BF59FCA",
-        categoryID: "F986A040-D575-4244-8BCB-EB7112793B77",
-        name: "Internet",
-        amount: 0,
-        extraAmount: 0,
-        adjustedAmount: 0,
-        adjustedAmountPlusExtra: 0,
-        regularExpenseDetails: null,
-        upcomingDetails: null,
-        monthsAhead: 0,
-        postingMonths: [],
-      },
-      {
-        guid: "DFD66850-8051-4BBB-BA7C-DC9A0130F17F",
-        categoryGroupID: "63A41D14-6D59-4578-B495-4B7E4BF59FCA",
-        categoryID: "F6797596-E0FD-4D2D-8320-E65D02854323",
-        name: "Electric",
-        amount: 0,
-        extraAmount: 0,
-        adjustedAmount: 0,
-        adjustedAmountPlusExtra: 0,
-        regularExpenseDetails: null,
-        upcomingDetails: null,
-        monthsAhead: 0,
-        postingMonths: [],
-      },
-      {
-        guid: "4891F4FC-CDDA-453F-B1FB-3B09BF1E1A86",
-        categoryGroupID: "63A41D14-6D59-4578-B495-4B7E4BF59FCA",
-        categoryID: "4F49151F-1016-48E5-B095-13843DBDCABD",
-        name: "Phone",
-        amount: 0,
-        extraAmount: 0,
-        adjustedAmount: 0,
-        adjustedAmountPlusExtra: 0,
-        regularExpenseDetails: null,
-        upcomingDetails: null,
-        monthsAhead: 0,
-        postingMonths: [],
-      },
-      {
-        guid: "3CDCFDBA-DFB3-424D-9729-1235B8EFC755",
-        categoryGroupID: "63A41D14-6D59-4578-B495-4B7E4BF59FCA",
-        categoryID: "B137F3F4-36B4-42F2-905D-2C401185BC6D",
-        name: "Transportation",
-        amount: 0,
-        extraAmount: 0,
-        adjustedAmount: 0,
-        adjustedAmountPlusExtra: 0,
-        regularExpenseDetails: null,
-        upcomingDetails: null,
-        monthsAhead: 0,
-        postingMonths: [],
-      },
-      {
-        guid: "6C1D3329-B17C-48B0-AE04-9FD0D817CE87",
-        categoryGroupID: "63A41D14-6D59-4578-B495-4B7E4BF59FCA",
-        categoryID: "84132F11-D3AF-4DEE-B019-3938798B6A7A",
-        name: "Water Delivery",
-        amount: 0,
-        extraAmount: 0,
-        adjustedAmount: 0,
-        adjustedAmountPlusExtra: 0,
-        regularExpenseDetails: null,
-        upcomingDetails: null,
-        monthsAhead: 0,
-        postingMonths: [],
-      },
-      {
-        guid: "7D4B19E6-08EF-4011-A9B5-DFA4F6633BC3",
-        categoryGroupID: "63A41D14-6D59-4578-B495-4B7E4BF59FCA",
-        categoryID: "0CFC3021-569C-45E2-8662-25115331DB35",
-        name: "Interest & Fees",
-        amount: 0,
-        extraAmount: 0,
-        adjustedAmount: 0,
-        adjustedAmountPlusExtra: 0,
-        regularExpenseDetails: null,
-        upcomingDetails: null,
-        monthsAhead: 0,
-        postingMonths: [],
-      },
-    ],
-  },
-  {
-    groupID: "B99ADFC5-BF7A-401D-993D-2C9227F93F58",
-    groupName: "Subscriptions",
-    amount: 0,
-    extraAmount: 0,
-    adjustedAmount: 0,
-    adjustedAmountPlusExtra: 0,
-    categories: [
-      {
-        guid: "81DFBF24-A187-45CB-B7F1-F0D69FFE7000",
-        categoryGroupID: "B99ADFC5-BF7A-401D-993D-2C9227F93F58",
-        categoryID: "2CE10570-2F8D-4C8A-8AD9-C7B27E498000",
-        name: "YNAB",
-        amount: 0,
-        extraAmount: 0,
-        adjustedAmount: 0,
-        adjustedAmountPlusExtra: 0,
-        regularExpenseDetails: null,
-        upcomingDetails: null,
-        monthsAhead: 0,
-        postingMonths: [],
-      },
-      {
-        guid: "B1D8AC89-A034-4C15-97F9-A21836D5AE9D",
-        categoryGroupID: "B99ADFC5-BF7A-401D-993D-2C9227F93F58",
-        categoryID: "CEF28B7D-3377-4D81-8A09-7F21E1FB6529",
-        name: "AWS",
-        amount: 0,
-        extraAmount: 0,
-        adjustedAmount: 0,
-        adjustedAmountPlusExtra: 0,
-        regularExpenseDetails: null,
-        upcomingDetails: null,
-        monthsAhead: 0,
-        postingMonths: [],
-      },
-      {
-        guid: "1CD1F6D0-96C8-4DF6-977F-5A2C59A8A5E6",
-        categoryGroupID: "B99ADFC5-BF7A-401D-993D-2C9227F93F58",
-        categoryID: "9B7EFEEA-47B1-47EB-86C7-0B84487F9C37",
-        name: "Spotify",
-        amount: 0,
-        extraAmount: 0,
-        adjustedAmount: 0,
-        adjustedAmountPlusExtra: 0,
-        regularExpenseDetails: null,
-        upcomingDetails: null,
-        monthsAhead: 0,
-        postingMonths: [],
-      },
-      {
-        guid: "A9587E65-2C2C-4EBD-ADAB-F86CF836BAA7",
-        categoryGroupID: "B99ADFC5-BF7A-401D-993D-2C9227F93F58",
-        categoryID: "F8BAFB7B-D5EC-4451-8594-0AE2BAC038A1",
-        name: "YouTube Premium",
-        amount: 0,
-        extraAmount: 0,
-        adjustedAmount: 0,
-        adjustedAmountPlusExtra: 0,
-        regularExpenseDetails: null,
-        upcomingDetails: null,
-        monthsAhead: 0,
-        postingMonths: [],
-      },
-      {
-        guid: "3FD07ACD-9A09-4FCF-A2DA-075315225A3D",
-        categoryGroupID: "B99ADFC5-BF7A-401D-993D-2C9227F93F58",
-        categoryID: "10337D15-8B4B-4FF5-965D-673004BFE6A4",
-        name: "Hulu",
-        amount: 0,
-        extraAmount: 0,
-        adjustedAmount: 0,
-        adjustedAmountPlusExtra: 0,
-        regularExpenseDetails: null,
-        upcomingDetails: null,
-        monthsAhead: 0,
-        postingMonths: [],
-      },
-      {
-        guid: "DA7374D2-2BF1-4B57-AEAE-51CC765FBA2F",
-        categoryGroupID: "B99ADFC5-BF7A-401D-993D-2C9227F93F58",
-        categoryID: "7FBB534F-2454-4DF2-9F58-4DD59691CD83",
-        name: "Patreon",
-        amount: 0,
-        extraAmount: 0,
-        adjustedAmount: 0,
-        adjustedAmountPlusExtra: 0,
-        regularExpenseDetails: null,
-        upcomingDetails: null,
-        monthsAhead: 0,
-        postingMonths: [],
-      },
-      {
-        guid: "B5BA20B2-F5BC-4AA9-974F-8E0552648A87",
-        categoryGroupID: "B99ADFC5-BF7A-401D-993D-2C9227F93F58",
-        categoryID: "BA89866F-1E2B-481C-952F-6FE55232C1DC",
-        name: "TeamTreehouse (Unpaused on May 11th)",
-        amount: 0,
-        extraAmount: 0,
-        adjustedAmount: 0,
-        adjustedAmountPlusExtra: 0,
-        regularExpenseDetails: null,
-        upcomingDetails: null,
-        monthsAhead: 0,
-        postingMonths: [],
-      },
-      {
-        guid: "DC7CEA19-D223-4338-B34F-CBAC17C9A169",
-        categoryGroupID: "B99ADFC5-BF7A-401D-993D-2C9227F93F58",
-        categoryID: "E2F9079E-A3F3-4756-BD29-28DBC84093B3",
-        name: "Audible",
-        amount: 0,
-        extraAmount: 0,
-        adjustedAmount: 0,
-        adjustedAmountPlusExtra: 0,
-        regularExpenseDetails: null,
-        upcomingDetails: null,
-        monthsAhead: 0,
-        postingMonths: [],
-      },
-      {
-        guid: "6C308AF4-C473-403E-BF91-C64EC09323FE",
-        categoryGroupID: "B99ADFC5-BF7A-401D-993D-2C9227F93F58",
-        categoryID: "1DD0D595-BDA0-4548-B6A6-5FECB8FC2008",
-        name: "DataCamp",
-        amount: 0,
-        extraAmount: 0,
-        adjustedAmount: 0,
-        adjustedAmountPlusExtra: 0,
-        regularExpenseDetails: null,
-        upcomingDetails: null,
-        monthsAhead: 0,
-        postingMonths: [],
-      },
-      {
-        guid: "1C36447E-3940-4AED-B3C8-C0E174826130",
-        categoryGroupID: "B99ADFC5-BF7A-401D-993D-2C9227F93F58",
-        categoryID: "120D99D3-3A32-4FE4-9599-1BB4EF643D3E",
-        name: "Password Manager",
-        amount: 0,
-        extraAmount: 0,
-        adjustedAmount: 0,
-        adjustedAmountPlusExtra: 0,
-        regularExpenseDetails: null,
-        upcomingDetails: null,
-        monthsAhead: 0,
-        postingMonths: [],
-      },
-      {
-        guid: "6E36A387-AF07-476A-BB68-9657ED2F3776",
-        categoryGroupID: "B99ADFC5-BF7A-401D-993D-2C9227F93F58",
-        categoryID: "F6BAAF83-DC54-44DA-B0B5-943B520858BD",
-        name: "Office 365",
-        amount: 0,
-        extraAmount: 0,
-        adjustedAmount: 0,
-        adjustedAmountPlusExtra: 0,
-        regularExpenseDetails: null,
-        upcomingDetails: null,
-        monthsAhead: 0,
-        postingMonths: [],
-      },
-      {
-        guid: "B2766598-A7ED-4BB4-9186-8E0EF9C15C25",
-        categoryGroupID: "B99ADFC5-BF7A-401D-993D-2C9227F93F58",
-        categoryID: "DEF0A763-4CB7-4658-9748-FD66E5EF12D4",
-        name: "Amazon Prime",
-        amount: 0,
-        extraAmount: 0,
-        adjustedAmount: 0,
-        adjustedAmountPlusExtra: 0,
-        regularExpenseDetails: null,
-        upcomingDetails: null,
-        monthsAhead: 0,
-        postingMonths: [],
-      },
-      {
-        guid: "E8012FD7-B85F-4D3D-BFBE-33AEDC5677B5",
-        categoryGroupID: "B99ADFC5-BF7A-401D-993D-2C9227F93F58",
-        categoryID: "0E0A60A8-C4BA-4A57-8ABB-70658F794A59",
-        name: "Tile",
-        amount: 0,
-        extraAmount: 0,
-        adjustedAmount: 0,
-        adjustedAmountPlusExtra: 0,
-        regularExpenseDetails: null,
-        upcomingDetails: null,
-        monthsAhead: 0,
-        postingMonths: [],
-      },
-    ],
-  },
-  {
-    groupID: "1FC69761-CC94-4C74-9EF0-981867D109F8",
-    groupName: "True Expenses",
-    amount: 0,
-    extraAmount: 0,
-    adjustedAmount: 0,
-    adjustedAmountPlusExtra: 0,
-    categories: [
-      {
-        guid: "E2ED1097-3420-4916-8839-709490239A27",
-        categoryGroupID: "1FC69761-CC94-4C74-9EF0-981867D109F8",
-        categoryID: "52FB6CD7-E572-4B8A-B489-E12A30A62378",
-        name: "Oil",
-        amount: 0,
-        extraAmount: 0,
-        adjustedAmount: 0,
-        adjustedAmountPlusExtra: 0,
-        regularExpenseDetails: null,
-        upcomingDetails: null,
-        monthsAhead: 0,
-        postingMonths: [],
-      },
-      {
-        guid: "7837C776-B2C2-4A02-B879-61FFF97DFBD5",
-        categoryGroupID: "1FC69761-CC94-4C74-9EF0-981867D109F8",
-        categoryID: "90A9C5F2-CD5A-4EE2-B0BD-CA6D38B9AB73",
-        name: "Car Insurance",
-        amount: 0,
-        extraAmount: 0,
-        adjustedAmount: 0,
-        adjustedAmountPlusExtra: 0,
-        regularExpenseDetails: null,
-        upcomingDetails: null,
-        monthsAhead: 0,
-        postingMonths: [],
-      },
-      {
-        guid: "B8C3E823-E812-4C1A-8C95-1FF1BE3CED35",
-        categoryGroupID: "1FC69761-CC94-4C74-9EF0-981867D109F8",
-        categoryID: "29317100-819D-4FCD-82AC-B61FE2E6D513",
-        name: "Auto Maintenance",
-        amount: 0,
-        extraAmount: 0,
-        adjustedAmount: 0,
-        adjustedAmountPlusExtra: 0,
-        regularExpenseDetails: null,
-        upcomingDetails: null,
-        monthsAhead: 0,
-        postingMonths: [],
-      },
-      {
-        guid: "16E4FBFD-B946-4D09-895D-6DDC3AED83D5",
-        categoryGroupID: "1FC69761-CC94-4C74-9EF0-981867D109F8",
-        categoryID: "D95BDA60-FA4D-46A2-BD4A-A40C6072C36C",
-        name: "EZPass",
-        amount: 0,
-        extraAmount: 0,
-        adjustedAmount: 0,
-        adjustedAmountPlusExtra: 0,
-        regularExpenseDetails: null,
-        upcomingDetails: null,
-        monthsAhead: 0,
-        postingMonths: [],
-      },
-      {
-        guid: "61A1901A-B979-4A29-AE0E-42CFC32299F2",
-        categoryGroupID: "1FC69761-CC94-4C74-9EF0-981867D109F8",
-        categoryID: "FC55A5E2-23AC-4F27-BB89-C3EC56B4FDB5",
-        name: "Car Inspection",
-        amount: 0,
-        extraAmount: 0,
-        adjustedAmount: 0,
-        adjustedAmountPlusExtra: 0,
-        regularExpenseDetails: null,
-        upcomingDetails: null,
-        monthsAhead: 0,
-        postingMonths: [],
-      },
-      {
-        guid: "66C4D107-BE9C-445C-AC85-56626783BF73",
-        categoryGroupID: "1FC69761-CC94-4C74-9EF0-981867D109F8",
-        categoryID: "830E4726-9E27-4608-90E9-184D81B4C6DD",
-        name: "Car Taxes",
-        amount: 0,
-        extraAmount: 0,
-        adjustedAmount: 0,
-        adjustedAmountPlusExtra: 0,
-        regularExpenseDetails: null,
-        upcomingDetails: null,
-        monthsAhead: 0,
-        postingMonths: [],
-      },
-      {
-        guid: "8FA4CEBB-72C3-4DCE-99C9-5451A4AE57CE",
-        categoryGroupID: "1FC69761-CC94-4C74-9EF0-981867D109F8",
-        categoryID: "B2FEF764-5FBF-4051-8754-9DBD07771FE0",
-        name: "Registration Renewal",
-        amount: 0,
-        extraAmount: 0,
-        adjustedAmount: 0,
-        adjustedAmountPlusExtra: 0,
-        regularExpenseDetails: null,
-        upcomingDetails: null,
-        monthsAhead: 0,
-        postingMonths: [],
-      },
-      {
-        guid: "6B482520-A1E2-4C2E-AD60-3B88957C8B19",
-        categoryGroupID: "1FC69761-CC94-4C74-9EF0-981867D109F8",
-        categoryID: "91EE5DAC-572B-4AD0-8D92-4C09EE043294",
-        name: "License Renewal",
-        amount: 0,
-        extraAmount: 0,
-        adjustedAmount: 0,
-        adjustedAmountPlusExtra: 0,
-        regularExpenseDetails: null,
-        upcomingDetails: null,
-        monthsAhead: 0,
-        postingMonths: [],
-      },
-      {
-        guid: "4FE798BE-3469-492E-914E-2542CAD69352",
-        categoryGroupID: "1FC69761-CC94-4C74-9EF0-981867D109F8",
-        categoryID: "AC60CC5B-BEC8-4D15-942A-D1C938CE25EF",
-        name: "Hygiene",
-        amount: 0,
-        extraAmount: 0,
-        adjustedAmount: 0,
-        adjustedAmountPlusExtra: 0,
-        regularExpenseDetails: null,
-        upcomingDetails: null,
-        monthsAhead: 0,
-        postingMonths: [],
-      },
-      {
-        guid: "96A15297-07D6-4AA3-ABB3-B524F4303BA1",
-        categoryGroupID: "1FC69761-CC94-4C74-9EF0-981867D109F8",
-        categoryID: "32C7BD9C-775C-4C91-AFD9-744CF1BB0FC0",
-        name: "Medical",
-        amount: 0,
-        extraAmount: 0,
-        adjustedAmount: 0,
-        adjustedAmountPlusExtra: 0,
-        regularExpenseDetails: null,
-        upcomingDetails: null,
-        monthsAhead: 0,
-        postingMonths: [],
-      },
-      {
-        guid: "33004C69-64B4-4451-A2F6-29CA52CADF32",
-        categoryGroupID: "1FC69761-CC94-4C74-9EF0-981867D109F8",
-        categoryID: "2FD496C7-4F67-4B45-AE63-35DC71F9B780",
-        name: "Shoes",
-        amount: 0,
-        extraAmount: 0,
-        adjustedAmount: 0,
-        adjustedAmountPlusExtra: 0,
-        regularExpenseDetails: null,
-        upcomingDetails: null,
-        monthsAhead: 0,
-        postingMonths: [],
-      },
-      {
-        guid: "66022BC4-539C-4C04-ACFC-A42CB152E387",
-        categoryGroupID: "1FC69761-CC94-4C74-9EF0-981867D109F8",
-        categoryID: "DB6D8C90-A75B-41EA-A755-A220198FFDE7",
-        name: "Haircut",
-        amount: 0,
-        extraAmount: 0,
-        adjustedAmount: 0,
-        adjustedAmountPlusExtra: 0,
-        regularExpenseDetails: null,
-        upcomingDetails: null,
-        monthsAhead: 0,
-        postingMonths: [],
-      },
-      {
-        guid: "F65EB4FA-7935-4E3D-A69C-C5CA3081392A",
-        categoryGroupID: "1FC69761-CC94-4C74-9EF0-981867D109F8",
-        categoryID: "2A464691-FB8D-45B0-A079-5C919BCEDD0B",
-        name: "Other",
-        amount: 0,
-        extraAmount: 0,
-        adjustedAmount: 0,
-        adjustedAmountPlusExtra: 0,
-        regularExpenseDetails: null,
-        upcomingDetails: null,
-        monthsAhead: 0,
-        postingMonths: [],
-      },
-    ],
-  },
-  {
-    groupID: "C826F5D5-4AEB-4B3A-8B40-2C9C235DA82F",
-    groupName: "Retirement/Investing",
-    amount: 0,
-    extraAmount: 0,
-    adjustedAmount: 0,
-    adjustedAmountPlusExtra: 0,
-    categories: [
-      {
-        guid: "494BA7DA-3DD3-4C88-BC2A-72DA537A8173",
-        categoryGroupID: "C826F5D5-4AEB-4B3A-8B40-2C9C235DA82F",
-        categoryID: "75FDC641-77CC-4520-A6DA-32883D766010",
-        name: "Uninvested Funds",
-        amount: 0,
-        extraAmount: 0,
-        adjustedAmount: 0,
-        adjustedAmountPlusExtra: 0,
-        regularExpenseDetails: null,
-        upcomingDetails: null,
-        monthsAhead: 0,
-        postingMonths: [],
-      },
-      {
-        guid: "4F3B8980-3159-4B15-816E-43CCD116B112",
-        categoryGroupID: "C826F5D5-4AEB-4B3A-8B40-2C9C235DA82F",
-        categoryID: "783117C5-B2AD-4031-8027-918198660BA9",
-        name: "Roth IRA",
-        amount: 0,
-        extraAmount: 0,
-        adjustedAmount: 0,
-        adjustedAmountPlusExtra: 0,
-        regularExpenseDetails: null,
-        upcomingDetails: null,
-        monthsAhead: 0,
-        postingMonths: [],
-      },
-      {
-        guid: "F3B06485-EE47-43FE-80CB-61FC90CBCE75",
-        categoryGroupID: "C826F5D5-4AEB-4B3A-8B40-2C9C235DA82F",
-        categoryID: "88584297-9103-4AFD-8103-0BF612C62C84",
-        name: "Taxable Account",
-        amount: 0,
-        extraAmount: 0,
-        adjustedAmount: 0,
-        adjustedAmountPlusExtra: 0,
-        regularExpenseDetails: null,
-        upcomingDetails: null,
-        monthsAhead: 0,
-        postingMonths: [],
-      },
-    ],
-  },
-  {
-    groupID: "51C5C104-AAD6-4395-8AB1-2452610514D0",
-    groupName: "Long Term Goals",
-    amount: 0,
-    extraAmount: 0,
-    adjustedAmount: 0,
-    adjustedAmountPlusExtra: 0,
-    categories: [
-      {
-        guid: "DD2521BB-EAD0-4757-97C0-9AF7316C5268",
-        categoryGroupID: "51C5C104-AAD6-4395-8AB1-2452610514D0",
-        categoryID: "2EA38F80-8A23-4BDD-9621-CDAE76EC873A",
-        name: "Saving for House Down Payment",
-        amount: 0,
-        extraAmount: 0,
-        adjustedAmount: 0,
-        adjustedAmountPlusExtra: 0,
-        regularExpenseDetails: null,
-        upcomingDetails: null,
-        monthsAhead: 0,
-        postingMonths: [],
-      },
-      {
-        guid: "22CCBB09-6AAC-459F-8AC6-E7CD3A3A3C5A",
-        categoryGroupID: "51C5C104-AAD6-4395-8AB1-2452610514D0",
-        categoryID: "FF52587F-1619-4538-A024-0FE37503FD2E",
-        name: "New Car",
-        amount: 0,
-        extraAmount: 0,
-        adjustedAmount: 0,
-        adjustedAmountPlusExtra: 0,
-        regularExpenseDetails: null,
-        upcomingDetails: null,
-        monthsAhead: 0,
-        postingMonths: [],
-      },
-    ],
-  },
-  {
-    groupID: "0EE79F74-BB7E-4D9E-82D7-35BB6A9D45A8",
-    groupName: "Education",
-    amount: 0,
-    extraAmount: 0,
-    adjustedAmount: 0,
-    adjustedAmountPlusExtra: 0,
-    categories: [
-      {
-        guid: "2B6EB00D-A257-4CB5-A3C8-8D6C2369AFE4",
-        categoryGroupID: "0EE79F74-BB7E-4D9E-82D7-35BB6A9D45A8",
-        categoryID: "2274CFE1-DB09-464D-BEDA-883252C7C261",
-        name: "Tuition",
-        amount: 0,
-        extraAmount: 0,
-        adjustedAmount: 0,
-        adjustedAmountPlusExtra: 0,
-        regularExpenseDetails: null,
-        upcomingDetails: null,
-        monthsAhead: 0,
-        postingMonths: [],
-      },
-      {
-        guid: "2DE0882A-6BA3-4FDA-B504-717A91CA89C2",
-        categoryGroupID: "0EE79F74-BB7E-4D9E-82D7-35BB6A9D45A8",
-        categoryID: "B0E5BC86-ECDD-4476-B397-2FA095E51A16",
-        name: "Books/Access Codes",
-        amount: 0,
-        extraAmount: 0,
-        adjustedAmount: 0,
-        adjustedAmountPlusExtra: 0,
-        regularExpenseDetails: null,
-        upcomingDetails: null,
-        monthsAhead: 0,
-        postingMonths: [],
-      },
-    ],
-  },
-  {
-    groupID: "FAB4742D-9064-4BD5-948A-BC4784D3C8B2",
-    groupName: "Quality of Life Goals",
-    amount: 0,
-    extraAmount: 0,
-    adjustedAmount: 0,
-    adjustedAmountPlusExtra: 0,
-    categories: [
-      {
-        guid: "62D576AF-1ABE-45D0-84F4-4CE3E6CDE783",
-        categoryGroupID: "FAB4742D-9064-4BD5-948A-BC4784D3C8B2",
-        categoryID: "48781144-C45F-4860-A260-2691BC978277",
-        name: "Vacation",
-        amount: 0,
-        extraAmount: 0,
-        adjustedAmount: 0,
-        adjustedAmountPlusExtra: 0,
-        regularExpenseDetails: null,
-        upcomingDetails: null,
-        monthsAhead: 0,
-        postingMonths: [],
-      },
-      {
-        guid: "E4524307-66D1-4336-A8BD-FA07DC0761D1",
-        categoryGroupID: "FAB4742D-9064-4BD5-948A-BC4784D3C8B2",
-        categoryID: "8AF8CC32-1E36-4B55-AAF4-1987027FAB25",
-        name: "Clothing",
-        amount: 0,
-        extraAmount: 0,
-        adjustedAmount: 0,
-        adjustedAmountPlusExtra: 0,
-        regularExpenseDetails: null,
-        upcomingDetails: null,
-        monthsAhead: 0,
-        postingMonths: [],
-      },
-      {
-        guid: "83D5096B-A5B6-4743-B79A-20EEAAA03E1E",
-        categoryGroupID: "FAB4742D-9064-4BD5-948A-BC4784D3C8B2",
-        categoryID: "FB674D65-1A9A-4708-A100-2EA1DB52CD79",
-        name: "Fitness",
-        amount: 0,
-        extraAmount: 0,
-        adjustedAmount: 0,
-        adjustedAmountPlusExtra: 0,
-        regularExpenseDetails: null,
-        upcomingDetails: null,
-        monthsAhead: 0,
-        postingMonths: [],
-      },
-      {
-        guid: "A31E7BDB-E188-4106-943C-53D7BFD3E905",
-        categoryGroupID: "FAB4742D-9064-4BD5-948A-BC4784D3C8B2",
-        categoryID: "9C3BF69E-4C20-47F9-B577-508EA25A5C4C",
-        name: "Furniture",
-        amount: 0,
-        extraAmount: 0,
-        adjustedAmount: 0,
-        adjustedAmountPlusExtra: 0,
-        regularExpenseDetails: null,
-        upcomingDetails: null,
-        monthsAhead: 0,
-        postingMonths: [],
-      },
-    ],
-  },
-  {
-    groupID: "23041B3B-06C5-4A1E-A432-A4787FC04BF8",
-    groupName: "Just for Fun",
-    amount: 0,
-    extraAmount: 0,
-    adjustedAmount: 0,
-    adjustedAmountPlusExtra: 0,
-    categories: [
-      {
-        guid: "429C2E6F-33D6-4B09-93EB-D698D2B1BE3E",
-        categoryGroupID: "23041B3B-06C5-4A1E-A432-A4787FC04BF8",
-        categoryID: "D5EDC7E8-755A-4153-9514-6C44892006C4",
-        name: "Dining Out",
-        amount: 0,
-        extraAmount: 0,
-        adjustedAmount: 0,
-        adjustedAmountPlusExtra: 0,
-        regularExpenseDetails: null,
-        upcomingDetails: null,
-        monthsAhead: 0,
-        postingMonths: [],
-      },
-      {
-        guid: "40F876AC-1BD6-4ACB-8250-6E90931BFB67",
-        categoryGroupID: "23041B3B-06C5-4A1E-A432-A4787FC04BF8",
-        categoryID: "4DB1EC38-4118-4360-BB99-D7D6CFBDBDF6",
-        name: "Chocolate",
-        amount: 0,
-        extraAmount: 0,
-        adjustedAmount: 0,
-        adjustedAmountPlusExtra: 0,
-        regularExpenseDetails: null,
-        upcomingDetails: null,
-        monthsAhead: 0,
-        postingMonths: [],
-      },
-      {
-        guid: "D6DEA1C6-10B1-4A1A-BEAF-FA767142B9BB",
-        categoryGroupID: "23041B3B-06C5-4A1E-A432-A4787FC04BF8",
-        categoryID: "F2CC1AA8-C9E7-4B52-BC81-950FEFD9B470",
-        name: "Gaming",
-        amount: 0,
-        extraAmount: 0,
-        adjustedAmount: 0,
-        adjustedAmountPlusExtra: 0,
-        regularExpenseDetails: null,
-        upcomingDetails: null,
-        monthsAhead: 0,
-        postingMonths: [],
-      },
-      {
-        guid: "E8B892A6-311E-464D-A1B2-C264FC923D82",
-        categoryGroupID: "23041B3B-06C5-4A1E-A432-A4787FC04BF8",
-        categoryID: "37B26B64-973E-4083-9F30-A6713E211B97",
-        name: "Gifts",
-        amount: 0,
-        extraAmount: 0,
-        adjustedAmount: 0,
-        adjustedAmountPlusExtra: 0,
-        regularExpenseDetails: null,
-        upcomingDetails: null,
-        monthsAhead: 0,
-        postingMonths: [],
-      },
-      {
-        guid: "BC1AB831-B68A-4EF7-A9B0-CCE82EF4C603",
-        categoryGroupID: "23041B3B-06C5-4A1E-A432-A4787FC04BF8",
-        categoryID: "78975B0B-5442-4B4E-81AD-51FB5241CAF8",
-        name: "Fun Money",
-        amount: 0,
-        extraAmount: 0,
-        adjustedAmount: 0,
-        adjustedAmountPlusExtra: 0,
-        regularExpenseDetails: null,
-        upcomingDetails: null,
-        monthsAhead: 0,
-        postingMonths: [],
-      },
-    ],
-  },
-  {
-    groupID: "CC742B58-9049-465F-A7E6-F217E9A3E35C",
-    groupName: "Concerts",
-    amount: 0,
-    extraAmount: 0,
-    adjustedAmount: 0,
-    adjustedAmountPlusExtra: 0,
-    categories: [
-      {
-        guid: "3DBDD07F-840B-4821-80DE-C4D65ABB7B03",
-        categoryGroupID: "CC742B58-9049-465F-A7E6-F217E9A3E35C",
-        categoryID: "BDCD8801-3919-4EA7-AE74-53780CF18EC8",
-        name: "Concerts",
-        amount: 0,
-        extraAmount: 0,
-        adjustedAmount: 0,
-        adjustedAmountPlusExtra: 0,
-        regularExpenseDetails: null,
-        upcomingDetails: null,
-        monthsAhead: 0,
-        postingMonths: [],
-      },
-    ],
-  },
-  {
-    groupID: "822F1490-8FC0-4630-BF2E-19A083DFBAEE",
-    groupName: "Birthdays",
-    amount: 0,
-    extraAmount: 0,
-    adjustedAmount: 0,
-    adjustedAmountPlusExtra: 0,
-    categories: [
-      {
-        guid: "06094B68-B7E0-42BC-B2BF-FED6A4D1C54D",
-        categoryGroupID: "822F1490-8FC0-4630-BF2E-19A083DFBAEE",
-        categoryID: "04D236EA-46E3-419F-A1D6-6FA0E4A777E2",
-        name: "Nelson",
-        amount: 0,
-        extraAmount: 0,
-        adjustedAmount: 0,
-        adjustedAmountPlusExtra: 0,
-        regularExpenseDetails: null,
-        upcomingDetails: null,
-        monthsAhead: 0,
-        postingMonths: [],
-      },
-      {
-        guid: "0912FFDE-AB4F-4917-B116-30C936606EA1",
-        categoryGroupID: "822F1490-8FC0-4630-BF2E-19A083DFBAEE",
-        categoryID: "731C22D8-0765-4CFA-9F01-625FD27F2C70",
-        name: "Jason",
-        amount: 0,
-        extraAmount: 0,
-        adjustedAmount: 0,
-        adjustedAmountPlusExtra: 0,
-        regularExpenseDetails: null,
-        upcomingDetails: null,
-        monthsAhead: 0,
-        postingMonths: [],
-      },
-    ],
-  },
-  {
-    groupID: "A5E1B019-AE13-47F6-A426-199073FF0987",
-    groupName: "Wish Farm",
-    amount: 0,
-    extraAmount: 0,
-    adjustedAmount: 0,
-    adjustedAmountPlusExtra: 0,
-    categories: [
-      {
-        guid: "1D3A04BC-5528-4716-8F64-6070A69E4569",
-        categoryGroupID: "A5E1B019-AE13-47F6-A426-199073FF0987",
-        categoryID: "8846406A-27A7-4ED1-8EF2-5DB725FFAF5F",
-        name: "(S) Air Fryer",
-        amount: 0,
-        extraAmount: 0,
-        adjustedAmount: 0,
-        adjustedAmountPlusExtra: 0,
-        regularExpenseDetails: null,
-        upcomingDetails: null,
-        monthsAhead: 0,
-        postingMonths: [],
-      },
-      {
-        guid: "E7367C32-09BF-46A5-80B4-981FE6BBF546",
-        categoryGroupID: "A5E1B019-AE13-47F6-A426-199073FF0987",
-        categoryID: "BB23861E-631B-4ADD-9A1D-082B388C98AA",
-        name: "(M) New Phone",
-        amount: 0,
-        extraAmount: 0,
-        adjustedAmount: 0,
-        adjustedAmountPlusExtra: 0,
-        regularExpenseDetails: null,
-        upcomingDetails: null,
-        monthsAhead: 0,
-        postingMonths: [],
-      },
-      {
-        guid: "3CA27FA1-A195-4035-9C62-3EB9E52B93B1",
-        categoryGroupID: "A5E1B019-AE13-47F6-A426-199073FF0987",
-        categoryID: "30509F7E-4580-490F-8407-573419AC8B7D",
-        name: "(L) KVM Switch",
-        amount: 0,
-        extraAmount: 0,
-        adjustedAmount: 0,
-        adjustedAmountPlusExtra: 0,
-        regularExpenseDetails: null,
-        upcomingDetails: null,
-        monthsAhead: 0,
-        postingMonths: [],
-      },
-    ],
-  },
-  {
-    groupID: "08AB15AA-8938-400B-A42D-99EDBE3B2B91",
-    groupName: "Wish List",
-    amount: 0,
-    extraAmount: 0,
-    adjustedAmount: 0,
-    adjustedAmountPlusExtra: 0,
-    categories: [
-      {
-        guid: "7DF8BB93-C0B7-442D-9159-29DCF9724476",
-        categoryGroupID: "08AB15AA-8938-400B-A42D-99EDBE3B2B91",
-        categoryID: "E6E2B26D-0E79-40CC-AB91-9AD217E59EFF",
-        name: "(S) Toaster",
-        amount: 0,
-        extraAmount: 0,
-        adjustedAmount: 0,
-        adjustedAmountPlusExtra: 0,
-        regularExpenseDetails: null,
-        upcomingDetails: null,
-        monthsAhead: 0,
-        postingMonths: [],
-      },
-      {
-        guid: "96BB8570-F6ED-4DEE-B730-69DE3286C59A",
-        categoryGroupID: "08AB15AA-8938-400B-A42D-99EDBE3B2B91",
-        categoryID: "354884BA-24B1-4208-9A26-D4BBEF1981D8",
-        name: "(S) Rice Cooker",
-        amount: 0,
-        extraAmount: 0,
-        adjustedAmount: 0,
-        adjustedAmountPlusExtra: 0,
-        regularExpenseDetails: null,
-        upcomingDetails: null,
-        monthsAhead: 0,
-        postingMonths: [],
-      },
-      {
-        guid: "86471910-FC10-4412-804E-D884D5193245",
-        categoryGroupID: "08AB15AA-8938-400B-A42D-99EDBE3B2B91",
-        categoryID: "9D407905-BCD8-4F61-8736-F3551ACB1461",
-        name: "(M) A/C",
-        amount: 0,
-        extraAmount: 0,
-        adjustedAmount: 0,
-        adjustedAmountPlusExtra: 0,
-        regularExpenseDetails: null,
-        upcomingDetails: null,
-        monthsAhead: 0,
-        postingMonths: [],
-      },
-      {
-        guid: "9B4D8165-B7A4-4A0C-9858-548848F8F457",
-        categoryGroupID: "08AB15AA-8938-400B-A42D-99EDBE3B2B91",
-        categoryID: "68A74B62-3A68-4ADE-B9A6-3B22C7195114",
-        name: "(M) Washer/Dryer",
-        amount: 0,
-        extraAmount: 0,
-        adjustedAmount: 0,
-        adjustedAmountPlusExtra: 0,
-        regularExpenseDetails: null,
-        upcomingDetails: null,
-        monthsAhead: 0,
-        postingMonths: [],
-      },
-      {
-        guid: "80788650-9869-41EC-852D-A413CB26DAB9",
-        categoryGroupID: "08AB15AA-8938-400B-A42D-99EDBE3B2B91",
-        categoryID: "A772BF59-99C0-466B-9ED9-41F4B51500B2",
-        name: "(M) Bed",
-        amount: 0,
-        extraAmount: 0,
-        adjustedAmount: 0,
-        adjustedAmountPlusExtra: 0,
-        regularExpenseDetails: null,
-        upcomingDetails: null,
-        monthsAhead: 0,
-        postingMonths: [],
-      },
-      {
-        guid: "3199C596-AD98-4623-BE18-7E38E2566122",
-        categoryGroupID: "08AB15AA-8938-400B-A42D-99EDBE3B2B91",
-        categoryID: "314CA824-F3E6-487D-AA0D-103EF04964D7",
-        name: "(L) New Computer",
-        amount: 0,
-        extraAmount: 0,
-        adjustedAmount: 0,
-        adjustedAmountPlusExtra: 0,
-        regularExpenseDetails: null,
-        upcomingDetails: null,
-        monthsAhead: 0,
-        postingMonths: [],
-      },
-    ],
-  },
-];
-
-function MainContent({ isLoading }: { isLoading: boolean }) {
-  const { isAuthenticated } = useAuth0();
-
+function MainContent() {
   const createWidget = (
     name: string,
-    widgetComponent: ReactNode,
-    fullComponent: ReactNode
+    widgetComponent: JSX.Element,
+    fullComponent: JSX.Element
   ) => {
+    const [widgetMadeChanges, setWidgetMadeChanges] = useState(false);
+    const [onSaveFn, setOnSaveFn] = useState<(() => void) | undefined>(
+      undefined
+    );
+
     const { isOpen, showModal, closeModal } = useModal();
+    const {
+      isOpen: isOpenWarning,
+      showModal: showModalWarning,
+      closeModal: closeModalWarning,
+    } = useModal();
+
+    const onExit = (exitType: "back" | "discard" | "save") => {
+      switch (exitType) {
+        case "back":
+          closeModalWarning();
+          break;
+
+        case "discard":
+          closeModalWarning();
+          closeModal();
+          break;
+
+        case "save":
+          if (onSaveFn) onSaveFn();
+
+          closeModalWarning();
+          closeModal();
+          break;
+
+        default:
+          break;
+      }
+    };
 
     return (
       <>
@@ -1043,9 +70,7 @@ function MainContent({ isLoading }: { isLoading: boolean }) {
           onClick={showModal}
           className="flex flex-col p-4 hover:cursor-pointer"
         >
-          <div className="font-cinzel text-center text-3xl text-color-primary mb-2">
-            {name}
-          </div>
+          <div className="font-cinzel text-center text-3xl  mb-2">{name}</div>
 
           {isLoading ? (
             <WidgetLoader />
@@ -1058,50 +83,90 @@ function MainContent({ isLoading }: { isLoading: boolean }) {
           <ModalContent
             fullScreen={true}
             modalTitle={name}
-            onClose={closeModal}
+            onClose={() => {
+              if (widgetMadeChanges) {
+                showModalWarning();
+              } else {
+                closeModal();
+              }
+            }}
           >
-            {fullComponent}
+            {["Budget Helper", "Budget Automation"].includes(name)
+              ? cloneElement(fullComponent, {
+                  widgetProps: {
+                    widgetMadeChanges,
+                    setWidgetMadeChanges,
+                    setOnSaveFn,
+                  } as WidgetProps,
+                })
+              : fullComponent}
+          </ModalContent>
+        )}
+
+        {isOpenWarning && (
+          <ModalContent
+            fullScreen={false}
+            modalTitle="Unsaved Changes"
+            onClose={closeModalWarning}
+          >
+            <UnsavedChangesModal onExit={onExit} />
           </ModalContent>
         )}
       </>
     );
   };
 
-  const categories = categoryGroups.reduce((prev, curr) => {
-    return [...prev, ...curr.categories];
-  }, [] as Category[]);
+  log("RENDERING [MainContent.tsx]");
 
+  const { isAuthenticated } = useAuth0();
+  const { isLoading, userData } = useEvercent();
+
+  // If the user isn't signed in, show them a message about how to sign in,
+  // and a quick overview of how Evercent can be used
   if (!isAuthenticated) return <SignInMessage />;
+
+  // If the user is logged in, but they haven't connected their YNAB budget to
+  // Evercent yet, show them another message about connecting to YNAB, which allows
+  // them to do so, as well
+  if (userData?.budgetID == FAKE_BUDGET_ID) {
+    return (
+      <div className="h-full flex flex-col space-y-2 justify-center items-center">
+        <div>Information about connecting to YNAB</div>
+        <YNABConnectButton userID={userData.userID} />
+      </div>
+    );
+  }
+
+  // Finally, at this point, our user is logged in, and their budget is connected,
+  // so we should be able to load their Evercent details with no issue
 
   return (
     <>
       <div className="h-full w-full flex justify-center">
-        <div className="grid grid-cols-2 grid-rows-2 gap-4 p-2 w-[90%]">
+        <div className="grid grid-cols-2 grid-rows-2 gap-4 p-2 w-[85%]">
           {createWidget(
             "Budget Helper",
-            <BudgetHelperWidget categoryGroups={categoryGroups} />,
-            <div className="h-full flex justify-center items-center text-color-primary">
-              Budget Helper Full
-            </div>
+            <BudgetHelperWidget />,
+            <BudgetHelperFull />
           )}
           {createWidget(
             "Budget Automation",
             <BudgetAutomationWidget />,
-            <div className="h-full flex justify-center items-center text-color-primary">
+            <div className="h-full flex justify-center items-center ">
               Budget Automation Full
             </div>
           )}
           {createWidget(
             "Regular Expenses",
-            <RegularExpensesWidget categories={categories} />,
-            <div className="h-full flex justify-center items-center text-color-primary">
+            <RegularExpensesWidget />,
+            <div className="h-full flex justify-center items-center ">
               Regular Expenses Full
             </div>
           )}
           {createWidget(
             "Upcoming Expenses",
             <UpcomingExpensesWidget />,
-            <div className="h-full flex justify-center items-center text-color-primary">
+            <div className="h-full flex justify-center items-center ">
               Upcoming Expenses Full
             </div>
           )}

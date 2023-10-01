@@ -6,6 +6,7 @@ import { useSQLMutation } from "../../hooks/useSQLMutation";
 import MyButton from "../elements/MyButton";
 import LabelAndValue from "../elements/LabelAndValue";
 import { log } from "../../utils/log";
+import WidgetLoader from "../other/WidgetLoader";
 
 function BudgetsListModal({
   userID,
@@ -20,7 +21,7 @@ function BudgetsListModal({
   });
 
   const { data, isLoading, isError } = useSQLQuery(
-    ["budgets-list"],
+    "get-budgets-list",
     getBudgetsList(userID)
   );
 
@@ -39,7 +40,7 @@ function BudgetsListModal({
   }, [changeBudgetData]);
 
   return (
-    <div className="h-full flex flex-col space-y-4 items-center text-color-primary pb-4">
+    <div className="h-full flex flex-col space-y-4 items-center  pb-4">
       <LabelAndValue
         label={"Current Budget"}
         classNameLabel="mt-6"
@@ -48,9 +49,11 @@ function BudgetsListModal({
       />
 
       <div className={`mt-2 flex-grow w-full flex flex-col px-2`}>
-        <Card className="h-full text-left flex-grow overflow-y-auto">
-          {data &&
-            data.map((budget: any) => {
+        {!data ? (
+          <WidgetLoader />
+        ) : (
+          <Card className="h-full text-left flex-grow overflow-y-auto">
+            {data.map((budget: any) => {
               return (
                 <div
                   key={budget.id}
@@ -60,14 +63,15 @@ function BudgetsListModal({
                   className={`p-1 m-1 font-semibold text-xl rounded-md hover:cursor-pointer ${
                     newBudget?.name == budget.name
                       ? "color-accent text-[#F6F9FA]"
-                      : "hover:bg-gray-300 dark:hover:text-black"
+                      : " color-accent-hover"
                   }`}
                 >
                   {budget.name}
                 </div>
               );
             })}
-        </Card>
+          </Card>
+        )}
       </div>
 
       <MyButton

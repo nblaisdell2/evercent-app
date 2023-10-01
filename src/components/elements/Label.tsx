@@ -8,7 +8,7 @@ type Props = {
 function Label({ label, className }: Props) {
   return (
     <div
-      className={`font-raleway text-color-primary sm:whitespace-normal font-bold underline ${
+      className={`font-raleway  sm:whitespace-normal font-bold underline ${
         className || ""
       }`}
     >

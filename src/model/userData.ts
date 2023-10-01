@@ -1,5 +1,7 @@
-import { EvercentData } from "../App";
 import { getAPIResponse } from "../utils/api";
+import { log } from "../utils/log";
+import { sum } from "../utils/util";
+import { CategoryGroup } from "./category";
 
 export type PayFrequency = "Weekly" | "Every 2 Weeks" | "Monthly";
 
@@ -13,51 +15,68 @@ export type UserData = {
   monthsAheadTarget: number;
 };
 
-export const getAllEvercentData =
-  (userEmail: string | undefined) => async () => {
-    if (!userEmail) throw new Error("User Email required to get Evercent data");
+export const getTotalAmountUsed = (categoryGroups: CategoryGroup[]) => {
+  return sum(categoryGroups, "adjustedAmountPlusExtra");
+};
+
+export const updateUserDetails =
+  (
+    userData: UserData,
+    monthlyIncome: number,
+    payFrequency: string,
+    nextPaydate: string
+  ) =>
+  async () => {
+    const { userID, budgetID } = userData;
+
+    log("updating user details with params:", {
+      UserID: userID,
+      BudgetID: budgetID,
+      MonthlyIncome: monthlyIncome,
+      PayFrequency: payFrequency,
+      NextPaydate: nextPaydate,
+    });
 
     const { data, error, headers } = await getAPIResponse({
-      method: "GET",
-      url: "/user",
+      method: "PUT",
+      url: "/user/userData",
       params: {
-        UserEmail: userEmail,
+        UserID: userID,
+        BudgetID: budgetID,
+        MonthlyIncome: monthlyIncome,
+        PayFrequency: payFrequency,
+        NextPaydate: nextPaydate,
       },
     });
 
     if (error) throw new Error(error);
-    return data as EvercentData;
+
+    const newUserData = {
+      ...userData,
+      monthlyIncome,
+      payFrequency: payFrequency as PayFrequency,
+      nextPaydate,
+    };
+    return newUserData;
   };
 
-export const updateUserDetails = (userData: UserData) => async () => {
-  const { data, error, headers } = await getAPIResponse({
-    method: "PUT",
-    url: "/user/userData",
-    params: {
-      UserID: userData.userID,
-      BudgetID: userData.budgetID,
-      MonthlyIncome: userData.monthlyIncome,
-      PayFrequency: userData.payFrequency,
-      NextPaydate: userData.nextPaydate,
-    },
-  });
-
-  if (error) throw new Error(error);
-  return data;
-};
-
 export const updateMonthsAhead =
-  (userID: string, budgetID: string, newTarget: number) => async () => {
+  (userData: UserData, newTarget: number) => async () => {
     const { data, error, headers } = await getAPIResponse({
       method: "PUT",
       url: "/user/monthsAhead",
       params: {
-        UserID: userID,
-        BudgetID: budgetID,
+        UserID: userData.userID,
+        BudgetID: userData.budgetID,
         NewTarget: newTarget,
       },
     });
 
     if (error) throw new Error(error);
-    return data;
+
+    const newUserData = {
+      ...userData,
+      monthsAheadTarget: newTarget,
+    };
+    return newUserData;
   };

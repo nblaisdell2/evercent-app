@@ -17,10 +17,10 @@ function MyCheckbox({
   return (
     <div
       className={`flex justify-center items-center ${
-        isLocked ? "bg-gray-400" : "bg-blue-900"
+        isLocked ? "bg-gray-400" : ""
       } h-4 w-4 border border-gray-400 rounded-[4px] mr-1 ${
         selected || isDet
-          ? "bg-opacity-100 text-white"
+          ? "bg-opacity-100 color-accent text-white"
           : parentIsHovered
           ? "bg-opacity-50"
           : "bg-opacity-0"
@@ -34,10 +34,28 @@ function MyCheckbox({
           className={`h-4 w-4 text-white stroke-2`}
         />
       ) : (
-        <MyIcon
-          iconType={"CheckMark"}
-          className={`h-4 w-4 text-white stroke-2`}
-        />
+        <>
+          <div className="block dark:hidden">
+            <MyIcon
+              iconType={"CheckMark"}
+              className={`h-4 w-4 ${
+                selected || parentIsHovered
+                  ? "dark:text-[#373737]"
+                  : "text-[#F6F9FA]"
+              } stroke-2`}
+            />
+          </div>
+          <div className="hidden dark:block">
+            <MyIcon
+              iconType={"CheckMark"}
+              className={`h-4 w-4 ${
+                selected || parentIsHovered
+                  ? "text-[#F6F9FA]"
+                  : "dark:text-[#373737]"
+              } stroke-2`}
+            />
+          </div>
+        </>
       )}
     </div>
   );

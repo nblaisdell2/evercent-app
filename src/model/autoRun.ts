@@ -58,7 +58,7 @@ export const saveAutoRunDetails =
     });
 
     if (error) throw new Error(error);
-    return data;
+    return data as AutoRun;
   };
 
 export const cancelAutoRuns =

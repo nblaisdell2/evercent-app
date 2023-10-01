@@ -21,14 +21,15 @@ function MainHeader() {
         {isAuthenticated ? "Welcome, " + user?.nickname : "Welcome"}
       </div>
 
-      <div className="flex space-x-8 mr-5">
+      <div className="flex space-x-8 mr-5 items-center w-fit">
         <MyToggle
           checked={darkMode}
           onToggle={toggle}
-          checkedColor="#343434"
-          uncheckedColor="#D4D4D4"
+          checkedColor="#373737"
+          uncheckedColor="#CACACA"
           checkedIcon={getIcon(true, "DarkMode")}
           uncheckedIcon={getIcon(true, "LightMode")}
+          className=""
         />
 
         {isAuthenticated ? (

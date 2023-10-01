@@ -3,29 +3,64 @@
 @tailwind utilities;
 
 .bg-primary {
-    @apply bg-[#D1F5FF] dark:bg-[#161616]
+  @apply bg-[#D1F5FF] dark:bg-[#161616];
 }
 
 .bg-secondary {
-    @apply bg-[#F6F9FA] dark:bg-[#373737]
+  @apply bg-[#F6F9FA] dark:bg-[#373737];
 }
 
 .color-accent {
-    @apply bg-blue-900 dark:bg-purple-800
+  @apply bg-blue-900 dark:bg-purple-800;
+}
+
+.border-color-accent {
+  @apply border-blue-900 dark:border-purple-800;
 }
 
 .text-color-accent {
-    @apply text-blue-900 dark:bg-purple-800
+  @apply text-blue-900 dark:text-purple-800;
 }
 
 .color-accent-secondary {
-    @apply bg-blue-400 dark:bg-purple-500
+  @apply bg-blue-400 dark:bg-purple-500;
 }
 
 .color-accent-hover {
-    @apply hover:bg-blue-300 dark:hover:bg-purple-300 dark:hover:text-black
+  @apply hover:bg-blue-300 dark:hover:bg-purple-300 dark:hover:text-black;
 }
 
 .text-color-primary {
-    @apply text-black dark:text-[#F6F9FA]
+  @apply text-black dark:text-[#F6F9FA];
+}
+
+
+@layer utilities {
+  /* Removes arrows in "number" inputs */
+  input[type="number"]::-webkit-inner-spin-button,
+  input[type="number"]::-webkit-outer-spin-button {
+    @apply appearance-none;
+  }
+
+  
+  /* Removes scrollbar in scrollable divs - Chrome, Safari and Opera */
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+
+  /* Removes scrollbar in scrollable divs - Other browsers */
+  .no-scrollbar {
+    -ms-overflow-style: none; /* IE and Edge */
+    scrollbar-width: none; /* Firefox */
+  }
+
+  .unselectable {
+      -webkit-touch-callout: none;
+      -webkit-user-select: none;
+      -khtml-user-select: none;
+      -moz-user-select: none;
+      -ms-user-select: none;
+      user-select: none;
+  }
+
 }

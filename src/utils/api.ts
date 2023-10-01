@@ -14,6 +14,7 @@ const instance = axios.create({
 });
 
 function getAxiosError(err: any): APIResponse {
+  log(err);
   const errMsg =
     "AxiosError (" +
     err.response.status +

@@ -13,6 +13,7 @@ const ReactRefreshWebpackPluginConfig = new ReactRefreshWebpackPlugin();
 // Needed to run locally
 const HTMLWebpackPluginConfig = new HtmlWebpackPlugin({
   template: __dirname + "/public/index.html",
+  favicon: "./public/favicon.ico",
   filename: "index.html",
   inject: "body",
 });

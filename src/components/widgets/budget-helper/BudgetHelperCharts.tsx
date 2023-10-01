@@ -5,7 +5,13 @@ import Chart, {
   ReactGoogleChartEvent,
 } from "react-google-charts";
 import { getMoneyString } from "../../../utils/util";
-import { CategoryGroup } from "../../../model/category";
+import {
+  CategoryGroup,
+  getAllCategories,
+  getGroupAmounts,
+} from "../../../model/category";
+import { getTotalAmountUsed } from "../../../model/userData";
+import { log } from "console";
 
 const CHART_COLORS = [
   "#3366cc",
@@ -75,7 +81,7 @@ const CHART_COLORS = [
 const getChartTooltip = (name: string, amount: number) => {
   return (
     '<div style="width: 200px; padding: 3px;">' +
-    '<span style="font-size: 1rem; font-weight: bold;">' +
+    '<span style="font-size: 1rem; font-weight: bold; color:black;">' +
     name +
     "<span>" +
     "<br/>" +
@@ -86,7 +92,15 @@ const getChartTooltip = (name: string, amount: number) => {
   );
 };
 
-function BudgetHelperCharts() {
+function BudgetHelperCharts({
+  monthlyIncome,
+  categoryGroups,
+  type,
+}: {
+  monthlyIncome: number;
+  categoryGroups: CategoryGroup[];
+  type: "widget" | "full";
+}) {
   const [selectedGroup, setSelectedGroup] = useState<{
     groupID: string;
     groupName: string;
@@ -103,73 +117,76 @@ function BudgetHelperCharts() {
   ) => {
     let myChartData;
     if (chartType == "group") {
-      if (other && other == "pie") {
-        myChartData = categoryList.reduce(
-          (prev: any, curr: any) => {
-            if (curr.adjustedAmtPlusExtra > 0) {
-              return [...prev, [curr.groupName, curr.adjustedAmtPlusExtra]];
-            }
-            return prev;
-          },
-          [["Category Group", "Amount Used"] as string[]]
-        );
-      } else {
-        myChartData = categoryList.reduce(
-          (prev: any, curr: any) => {
-            if (curr?.adjustedAmtPlusExtra > 0) {
-              prev[0] = [
-                ...prev[0],
-                curr.groupName,
-                { role: "tooltip", type: "string", p: { html: true } },
-              ];
-              prev[1] = [
-                ...prev[1],
-                curr.adjustedAmtPlusExtra / monthlyIncome,
-                getChartTooltip(curr.groupName, curr.adjustedAmtPlusExtra),
-              ];
-            }
-            return prev;
-          },
-          [[] as any[], [] as any[]]
-        );
-      }
+      myChartData = categoryList.reduce(
+        (prev: any, curr: CategoryGroup) => {
+          const amts = getGroupAmounts(curr.categories, false);
+          if (amts.adjustedAmountPlusExtra > 0) {
+            prev[0] = [
+              ...prev[0],
+              curr.groupName,
+              { role: "tooltip", type: "string", p: { html: true } },
+            ];
+            prev[1] = [
+              ...prev[1],
+              curr.adjustedAmountPlusExtra / monthlyIncome,
+              getChartTooltip(curr.groupName, curr.adjustedAmountPlusExtra),
+            ];
+          }
+          return prev;
+        },
+        [[] as any[], [] as any[]]
+      );
     } else {
       let chartRemainder = monthlyIncome;
+      let list = [...categoryList];
       if (selectedGroup.groupID != "") {
-        chartRemainder = 0;
-        // categoryList
-        //   .filter((grp) => grp.groupID == selectedGroup.groupID)[0]
-        //   .categories.reduce((prev, curr) => {
-        //     return prev + curr.adjustedAmtPlusExtra;
-        //   }, 0);
+        list = categoryList.filter(
+          (grp) => grp.groupID == selectedGroup.groupID
+        );
+        chartRemainder = list.reduce((prev, curr) => {
+          return prev + curr.adjustedAmountPlusExtra;
+        }, 0);
       }
-      // myChartData = (
-      //   merge(categoryList, "categories") as CategoryListItem[]
-      // ).reduce(
-      //   (prev, curr) => {
-      //     if (
-      //       curr?.adjustedAmtPlusExtra > 0 &&
-      //       (selectedGroup.groupID == "" ||
-      //         curr.categoryGroupID == selectedGroup.groupID)
-      //     ) {
-      //       prev[0] = [
-      //         ...prev[0],
-      //         curr.name,
-      //         { role: "tooltip", type: "string", p: { html: true } },
-      //       ];
-      //       prev[1] = [
-      //         ...prev[1],
-      //         curr.adjustedAmtPlusExtra / chartRemainder,
-      //         getChartTooltip(curr.name, curr.adjustedAmtPlusExtra),
-      //       ];
-      //     }
-      //     return prev;
-      //   },
-      //   [[] as any[], [] as any[]]
-      // );
+      myChartData = getAllCategories(list, false).reduce(
+        (prev, curr) => {
+          if (
+            curr?.adjustedAmountPlusExtra > 0 &&
+            (selectedGroup.groupID == "" ||
+              curr.categoryGroupID == selectedGroup.groupID)
+          ) {
+            if (prev[0]) {
+              prev[0] = [
+                ...prev[0],
+                curr.name,
+                { role: "tooltip", type: "string", p: { html: true } },
+              ];
+            } else {
+              prev[0] = [
+                curr.name,
+                { role: "tooltip", type: "string", p: { html: true } },
+              ];
+            }
+
+            if (prev[1]) {
+              prev[1] = [
+                ...prev[1],
+                curr.adjustedAmountPlusExtra / chartRemainder,
+                getChartTooltip(curr.name, curr.adjustedAmountPlusExtra),
+              ];
+            } else {
+              prev[1] = [
+                curr.adjustedAmountPlusExtra / chartRemainder,
+                getChartTooltip(curr.name, curr.adjustedAmountPlusExtra),
+              ];
+            }
+          }
+          return prev;
+        },
+        [[] as any[], [] as any[]]
+      );
     }
 
-    let remainder = monthlyIncome - 0; //getTotalAmountUsed(categoryList);
+    let remainder = monthlyIncome - getTotalAmountUsed(categoryList);
     if (other == "pie") {
       myChartData.push(["Unused", remainder]);
     } else {
@@ -208,31 +225,31 @@ function BudgetHelperCharts() {
           const { row, column } = selectedItem as any;
 
           const colName = dataTable.getColumnLabel(column) || "";
-          const colID = 0;
-          // categoryList.find((catGroup: CategoryGroup) => {
-          //   return catGroup.groupName == colName;
-          // })?.categories[0].categoryGroupID || "";
+          const colID =
+            categoryGroups.find((catGroup: CategoryGroup) => {
+              return catGroup.groupName == colName;
+            })?.categories[0].categoryGroupID || "";
 
-          // setSelectedGroup((prev) => {
-          //   if (prev.groupID == colID || colName == "Unused") {
-          //     return {
-          //       groupID: "",
-          //       groupName: "",
-          //     };
-          //   }
-          //   return {
-          //     groupID: colID,
-          //     groupName: colName,
-          //   };
-          // });
+          setSelectedGroup((prev) => {
+            if (prev.groupID == colID || colName == "Unused") {
+              return {
+                groupID: "",
+                groupName: "",
+              };
+            }
+            return {
+              groupID: colID,
+              groupName: colName,
+            };
+          });
 
-          // console.log("You selected:", {
-          //   row,
-          //   column,
-          //   colName: colName,
-          //   colID: colID,
-          //   value: dataTable?.getValue(row, column),
-          // });
+          console.log("You selected:", {
+            row,
+            column,
+            colName: colName,
+            colID: colID,
+            value: dataTable?.getValue(row, column),
+          });
         }
       },
     },
@@ -272,95 +289,91 @@ function BudgetHelperCharts() {
     },
   };
 
-  // const chartDataGroup = getChartData(categoryList, monthlyIncome, "group");
-  // const chartDataGroupPie = getChartData(
-  //   categoryList,
-  //   monthlyIncome,
-  //   "group",
-  //   "pie"
-  // );
-  // const chartDataCategory = getChartData(
-  //   categoryList,
-  //   monthlyIncome,
-  //   "category"
-  // );
-  // console.log("chartDataCategory", chartDataCategory);
+  const chartDataGroup = getChartData(categoryGroups, monthlyIncome, "group");
+  const chartDataGroupPie = getChartData(
+    categoryGroups,
+    monthlyIncome,
+    "group",
+    "pie"
+  );
+  const chartDataCategory = getChartData(
+    categoryGroups,
+    monthlyIncome,
+    "category"
+  );
+
+  // log({ chartDataGroup, chartDataCategory });
 
   let groupColors: any[] = [];
-  // for (let i = 1; i < (chartDataGroup[0].length - 1) / 2; i++) {
-  //   groupColors.push(
-  //     !selectedGroup.groupID ||
-  //       selectedGroup.groupName == chartDataGroup[0][i * 2 - 1]
-  //       ? CHART_COLORS[Math.floor(selectedGroup.groupID ? i - 1 : i - 1)]
-  //       : "#C0C0C0"
-  //   );
-  // }
-  const type: string = "widget";
-  // console.log("groupColors", groupColors);
+  for (let i = 1; i < (chartDataGroup[0].length - 1) / 2; i++) {
+    groupColors.push(
+      !selectedGroup.groupID ||
+        selectedGroup.groupName == chartDataGroup[0][i * 2 - 1]
+        ? CHART_COLORS[Math.floor(selectedGroup.groupID ? i - 1 : i - 1)]
+        : "#C0C0C0"
+    );
+  }
 
   return (
-    <>
-      <div className="hidden sm:block">
-        {/* <div>
-          {type == "full" && (
-            <div className="p-1 font-bold">By Category Group</div>
-          )}
+    <div className="hidden sm:block">
+      <div>
+        {type == "full" && (
+          <div className="p-1 font-bold">By Category Group</div>
+        )}
+        <Chart
+          chartType="BarChart"
+          className={`${type == "full" ? "h-[115px]" : "h-[40px]"} w-full`}
+          data={chartDataGroup}
+          options={{
+            ...chartOptions,
+            colors: [...groupColors, "#A0A0A0"],
+          }}
+          chartEvents={chartEvents}
+        />
+      </div>
+      {type == "full" && (
+        <div>
+          <div className="p-1 font-bold">
+            By Category{" "}
+            {selectedGroup.groupName && " - " + selectedGroup.groupName}
+          </div>
           <Chart
             chartType="BarChart"
             width={"100%"}
             height={"115px"}
-            // data={chartDataGroup}
+            data={chartDataCategory}
             options={{
               ...chartOptions,
-              colors: [...groupColors, "#A0A0A0"],
+              colors: [
+                ...CHART_COLORS.slice(
+                  0,
+                  chartDataCategory[0].length / 2 -
+                    (!selectedGroup.groupID ? 1 : 0)
+                ),
+                "#A0A0A0",
+              ],
             }}
-            chartEvents={chartEvents}
           />
-        </div> */}
-        {/* {type == "full" && (
-          <div>
-            <div className="p-1 font-bold">
-              By Category{" "}
-              {selectedGroup.groupName && " - " + selectedGroup.groupName}
-            </div>
-            <Chart
-              chartType="BarChart"
-              width={"100%"}
-              height={"115px"}
-              // data={chartDataCategory}
-              // options={{
-              //   ...chartOptions,
-              //   colors: [
-              //     ...CHART_COLORS.slice(
-              //       0,
-              //       chartDataCategory[0].length / 2 -
-              //         (!selectedGroup.groupID ? 1 : 0)
-              //     ),
-              //     "#A0A0A0",
-              //   ],
-              // }}
-            />
-          </div>
-        )} */}
-      </div>
+        </div>
+      )}
       {/* <div className="block sm:hidden">
         <div>
           <Chart
             chartType="PieChart"
             width={"100%"}
             height={"250px"}
-            // data={chartDataGroupPie}
-            // options={{
-            //   ...chartOptionsPie,
-            //   colors: [
-            //     ...CHART_COLORS.slice(0, chartDataGroupPie.length - 2),
-            //     "#A0A0A0",
-            //   ],
-            // }}
+            data={chartDataGroupPie}
+            options={{
+              ...chartOptionsPie,
+              colors: [
+                ...CHART_COLORS.slice(0, chartDataGroupPie.length - 2),
+                "#A0A0A0",
+              ],
+            }}
           />
         </div>
       </div> */}
-    </>
+    </div>
   );
 }
 

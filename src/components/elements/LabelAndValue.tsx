@@ -29,7 +29,7 @@ function LabelAndValue({
       />
       <div
         className={`${classNameValue || ""} font-bold -mt-2 ${
-          classNameValueColor || "text-color-primary"
+          classNameValueColor || ""
         }`}
       >
         {isLoading !== undefined && isLoading ? (

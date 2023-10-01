@@ -1,16 +1,24 @@
 import React from "react";
 import LabelAndValue from "../../elements/LabelAndValue";
-import { getMoneyString } from "../../../utils/util";
+import { getMoneyString, getPercentString } from "../../../utils/util";
+import { CategoryGroup } from "../../../model/category";
+import { getTotalAmountUsed } from "../../../model/userData";
+import { log } from "../../../utils/log";
 
-function Amounts() {
-  const totalAmountUsed = 0; //getTotalAmountUsed(categoryList);
-  const monthlyIncome = 0;
-
-  const type: string = "widget";
+function Amounts({
+  monthlyIncome,
+  categoryGroups,
+  type,
+}: {
+  monthlyIncome: number;
+  categoryGroups: CategoryGroup[];
+  type: "widget" | "full";
+}) {
+  const totalAmountUsed = getTotalAmountUsed(categoryGroups);
 
   return (
     <div
-      className={`flex justify-center ${
+      className={`flex ${
         type == "full" ? "sm:justify-end" : "justify-around sm:justify-center"
       } space-x-4 sm:space-x-24`}
     >
@@ -52,9 +60,7 @@ function Amounts() {
           <div className="flex flex-col items-center w-18">
             <LabelAndValue
               label={"% Used"}
-              value={
-                "0%" /*calculatePercentString(totalAmountUsed, monthlyIncome)*/
-              }
+              value={getPercentString(totalAmountUsed / monthlyIncome)}
               classNameLabel={"text-sm sm:text-xl"}
               classNameValue={`text-2xl sm:text-3xl`}
             />

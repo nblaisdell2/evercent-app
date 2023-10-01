@@ -12,7 +12,7 @@ export function useSQLMutation<TDataQuery, TDataOutput>(
 ) {
   const queryClient = useQueryClient();
 
-  const { mutate, isError, data } = useMutation<
+  const { mutate, isError, error, data } = useMutation<
     TDataOutput,
     unknown,
     void,
@@ -58,5 +58,5 @@ export function useSQLMutation<TDataQuery, TDataOutput>(
     }
   }, [isError]);
 
-  return { mutate: mutate, error: foundError, data };
+  return { mutate: mutate, error: foundError, data, mutError: error };
 }

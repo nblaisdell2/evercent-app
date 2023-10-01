@@ -33,7 +33,7 @@ function UpcomingExpensesWidget({
   if (!upcomingDetails) {
     return (
       <div className="h-full flex justify-center items-center">
-        <div className="text-color-primary font-bold text-2xl text-center">
+        <div className=" font-bold text-2xl text-center">
           Use the <span className="font-cinzel text-3xl">Budget Helper</span>{" "}
           widget, and mark some categories as an <u>Upcoming Expense</u> to see
           those details here.

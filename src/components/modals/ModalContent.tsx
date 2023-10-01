@@ -1,6 +1,9 @@
 import React, { ReactNode } from "react";
 import Card from "../elements/Card";
 import MyIcon from "../elements/MyIcon";
+import useModal from "../../hooks/useModal";
+import UnsavedChangesModal from "./UnsavedChangesModal";
+import { log } from "../../utils/log";
 
 function ModalContent({
   modalTitle,
@@ -30,7 +33,7 @@ function ModalContent({
       >
         <div className="p-1 flex justify-between" onClick={onClose}>
           <div className="w-12" />
-          <p className="text-color-primary font-cinzel font-light text-center text-3xl">
+          <p className=" font-cinzel font-light text-center text-3xl">
             {modalTitle}
           </p>
           <MyIcon

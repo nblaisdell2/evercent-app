@@ -1,13 +1,20 @@
 import React from "react";
-import { Category } from "../../../model/category";
+import {
+  Category,
+  CategoryGroup,
+  getAllCategories,
+} from "../../../model/category";
 import LabelAndValue from "../../elements/LabelAndValue";
 import { getPercentString } from "../../../utils/util";
+import useEvercent from "../../../hooks/useEvercent";
 
-function RegularExpensesWidget({ categories }: { categories?: Category[] }) {
+function RegularExpensesWidget() {
+  const { categoryGroups } = useEvercent();
+  const categories = getAllCategories(categoryGroups, true);
   if (!categories) {
     return (
       <div className="h-full flex justify-center items-center">
-        <div className="text-color-primary font-bold text-2xl text-center">
+        <div className=" font-bold text-2xl text-center">
           Use the <span className="font-cinzel text-3xl">Budget Helper</span>{" "}
           widget, and mark some categories as a <u>Regular Expense</u> to see
           those details here.

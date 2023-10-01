@@ -12,8 +12,7 @@
     "noFallthroughCasesInSwitch": true,
     "allowUnreachableCode": false,
     "strictNullChecks": true,
-    "forceConsistentCasingInFileNames": true,
-    "noUncheckedIndexedAccess": true
+    "forceConsistentCasingInFileNames": true
   },
   "include": ["**/*.ts", "**/*.tsx"],
   "exclude": ["node_modules/**/*"]

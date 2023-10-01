@@ -1,8 +1,9 @@
 import React from "react";
 import Amounts from "./Amounts";
 import BudgetHelperCharts from "./BudgetHelperCharts";
-import { CategoryGroup } from "../../../model/category";
+import { CategoryGroup, getTotalAmountUsed } from "../../../model/category";
 import { getPercentString } from "../../../utils/util";
+import useEvercent from "../../../hooks/useEvercent";
 
 const CHART_COLORS = [
   "#3366cc",
@@ -38,16 +39,13 @@ const CHART_COLORS = [
   "#743411",
 ];
 
-function BudgetHelperWidget({
-  categoryGroups,
-}: {
-  categoryGroups: CategoryGroup[];
-}) {
+function BudgetHelperWidget() {
+  const { userData, categoryGroups } = useEvercent();
+
   const getLegendGrid = (catList: CategoryGroup[], numRows: number) => {
-    const percUnused = 0;
-    // catList.reduce((prev, curr) => {
-    //   return prev + curr.percentIncome;
-    // }, 0);
+    const totalUsed = getTotalAmountUsed(catList, false);
+    const monthlyIncome = userData?.monthlyIncome || 0;
+    const percUnused = (monthlyIncome - totalUsed) / monthlyIncome;
 
     const numCols = Math.floor((catList.length + 1) / numRows) + 1;
 
@@ -67,17 +65,15 @@ function BudgetHelperWidget({
     if (catList.length == 0) {
       return (
         <div className="h-full flex items-center justify-center">
-          <div className="font-bold text-2xl text-color-primary">
-            No Categories Selected
-          </div>
+          <div className="font-bold text-2xl ">No Categories Selected</div>
         </div>
       );
     }
 
     return (
       <>
-        {catList.map((grp: any, i) => {
-          if (grp.adjustedAmtPlusExtra == 0) return null;
+        {catList.map((grp: CategoryGroup, i) => {
+          if (grp.adjustedAmountPlusExtra == 0) return null;
           return (
             <div
               className="flex items-center"
@@ -94,7 +90,10 @@ function BudgetHelperWidget({
               ></div>
               <div className="font-semibold ml-1 text-[0.65rem] sm:text-sm whitespace-nowrap">
                 {"(" +
-                  getPercentString(grp.percentIncome, 0) +
+                  getPercentString(
+                    grp.adjustedAmountPlusExtra / monthlyIncome,
+                    0
+                  ) +
                   ") " +
                   grp.groupName}
               </div>
@@ -112,37 +111,45 @@ function BudgetHelperWidget({
             style={{ backgroundColor: "#A0A0A0" }}
           ></div>
           <div className="font-semibold ml-1 text-[0.65rem] sm:text-sm">
-            {"(" + getPercentString(1 - percUnused, 0) + ") Unused"}
+            {"(" + getPercentString(percUnused, 0) + ") Unused"}
           </div>
         </div>
       </>
     );
   };
 
-  const categoriesWithAmounts = categoryGroups.filter(
+  const groupsWithAmounts = categoryGroups.filter(
     (grp) => grp.adjustedAmountPlusExtra > 0
   );
 
   return (
-    <div className="h-full flex flex-col">
-      <div className="sm:mb-1">
-        <Amounts />
+    <div className="h-full flex flex-col space-y-2">
+      <div className="mb-1">
+        <Amounts
+          monthlyIncome={userData?.monthlyIncome as number}
+          categoryGroups={categoryGroups}
+          type="widget"
+        />
       </div>
-      <div className="hidden sm:block sm:my-1">
-        <BudgetHelperCharts />
-      </div>
+      {groupsWithAmounts.length > 0 && (
+        <div className="my-1">
+          <BudgetHelperCharts
+            monthlyIncome={userData?.monthlyIncome as number}
+            categoryGroups={categoryGroups}
+            type="widget"
+          />
+        </div>
+      )}
 
       <div
-        className={`p-1 mt-4 flex-grow ${
-          categoriesWithAmounts.length > 0
-            ? "sm:grid grid-flow-col"
-            : "sm:block"
+        className={`p-1 flex-grow ${
+          groupsWithAmounts.length > 0 ? "sm:grid grid-flow-col" : "sm:block"
         }`}
         style={{
           gridTemplateRows: "repeat(8, minmax(0, 1fr))",
         }}
       >
-        {getLegendGrid(categoriesWithAmounts, 8)}
+        {getLegendGrid(groupsWithAmounts, 8)}
       </div>
     </div>
   );

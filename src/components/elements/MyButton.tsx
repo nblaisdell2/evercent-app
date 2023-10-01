@@ -1,3 +1,4 @@
+import { NoSymbolIcon } from "@heroicons/react/24/solid";
 import React from "react";
 
 function MyButton({
@@ -16,13 +17,23 @@ function MyButton({
   return (
     <button
       onClick={onClick}
-      className={`px-4 py-2 rounded-md shadow-slate-400 shadow-sm text-color-primary color-accent-secondary ${
-        disabled ? "hover:cursor-not-allowed" : "color-accent-hover"
+      className={`px-4 rounded-md shadow-slate-400 shadow-sm  ${
+        disabled
+          ? "hover:cursor-not-allowed bg-gray-300 text-black"
+          : "color-accent-secondary color-accent-hover"
       } ${className || ""}`}
     >
       <div className="flex justify-center items-center">
-        {icon}
-        <div className="font-semibold text-lg">{buttonText}</div>
+        {disabled ? (
+          <div>
+            <NoSymbolIcon className="h-6 w-6 text-red-600 stroke-2 mr-1" />
+          </div>
+        ) : (
+          <div>{icon}</div>
+        )}
+        <div className={`font-semibold text-lg ${disabled && "text-gray-500"}`}>
+          {buttonText}
+        </div>
       </div>
     </button>
   );

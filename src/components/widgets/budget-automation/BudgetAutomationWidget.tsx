@@ -24,7 +24,7 @@ function BudgetAutomationWidget() {
       }`}
     >
       {!hasCategories ? (
-        <div className="text-color-primary font-bold text-2xl text-center">
+        <div className=" font-bold text-2xl text-center">
           Use the <span className="font-cinzel text-3xl">Budget Helper</span>{" "}
           widget, and enter some amounts on the categories to see their details
           here, and be able to automatically post those amounts into your budget

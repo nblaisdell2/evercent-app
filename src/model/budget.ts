@@ -1,5 +1,7 @@
+import { startOfMonth } from "date-fns";
 import { getAPIResponse } from "../utils/api";
 import { log } from "../utils/log";
+import { find } from "../utils/util";
 
 export const FAKE_BUDGET_ID = "AAAAAAAA-BBBB-CCCC-DDDD-EEEEEEFFFFFF";
 
@@ -46,7 +48,6 @@ export const connectToYNAB = (userID: string) => async () => {
   });
 
   if (error) throw new Error(error);
-  log("connect data", data);
 
   window.location.href = data.url;
 };
@@ -90,7 +91,7 @@ export const updateBudgetCategoryAmount =
   async () => {
     const { data, error, headers } = await getAPIResponse({
       method: "POST",
-      url: "/budget/switchBudget",
+      url: "/budget/updateCategoryAmount",
       params: {
         UserID: userID,
         BudgetID: budgetID,
@@ -103,3 +104,36 @@ export const updateBudgetCategoryAmount =
     if (error) throw new Error(error);
     return data;
   };
+
+/////////////////
+
+export const getBudgetCategories = (budget: Budget) => {
+  return budget.months[0].groups.reduce((prev, curr) => {
+    return [...prev, ...curr.categories];
+  }, [] as BudgetMonthCategory[]);
+};
+
+export const getBudgetMonth = (months: BudgetMonth[], dt: Date) => {
+  const dtNextDueDateMonth = startOfMonth(dt);
+  const monthStr = dtNextDueDateMonth.toISOString().substring(0, 10);
+
+  // Get BudgetMonthCategory from the same month of
+  // this category's next due date
+  return find(months, (bm) => bm.month == monthStr);
+};
+
+export const getBudgetCategory = (
+  month: BudgetMonth,
+  groupID: string,
+  categoryID: string
+) => {
+  const budgetGroup = find(
+    month.groups,
+    (grp) => grp.categoryGroupID.toLowerCase() == groupID.toLowerCase()
+  );
+  const budgetCategory = find(
+    budgetGroup.categories,
+    (cat) => cat.categoryID.toLowerCase() == categoryID.toLowerCase()
+  );
+  return budgetCategory;
+};

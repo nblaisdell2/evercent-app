@@ -3,7 +3,7 @@ import Card from "../elements/Card";
 
 function SignInMessage() {
   return (
-    <div className="flex items-center justify-center space-x-8 h-full w-full bg-primary text-color-primary font-mplus">
+    <div className="flex items-center justify-center space-x-8 h-full w-full bg-primary  font-mplus">
       <div className="flex flex-col justify-center space-y-10 h-full">
         <Card className="flex flex-col space-y-4 items-center py-20">
           <div className="font-bold text-4xl text-center mt-2">Step 1</div>

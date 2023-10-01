@@ -24,8 +24,8 @@ const queryClient = new QueryClient({
       // // refetch options (shouldn't apply since data is never stale)
       // refetchInterval: 60000, // number of ms to refetch next
       // refetchIntervalInBackground: true, // true if refetch in background, false otherwise
-      // refetchOnWindowFocus: false,
-      // refetchOnReconnect: false,
+      refetchOnWindowFocus: false,
+      refetchOnReconnect: false,
 
       // Default Query to run, can be overridden
       // queryFn: defaultQueryFn,
