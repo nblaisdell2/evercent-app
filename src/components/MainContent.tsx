@@ -1,125 +1,73 @@
-import React, { Dispatch, SetStateAction, cloneElement, useState } from "react";
-import Card from "./elements/Card";
-import ModalContent from "./modals/ModalContent";
-import useModal from "../hooks/useModal";
+import React, { cloneElement } from "react";
 import { useAuth0 } from "@auth0/auth0-react";
+import useEvercent from "../hooks/useEvercent";
+import useModal, { ModalProps } from "../hooks/useModal";
+import ModalContent from "./modals/ModalContent";
 import SignInMessage from "./other/SignInMessage";
-import BudgetHelperWidget from "./widgets/budget-helper/BudgetHelperWidget";
+import { log } from "../utils/log";
 
+import Card from "./elements/Card";
 import WidgetLoader from "./other/WidgetLoader";
 import { FAKE_BUDGET_ID } from "../model/budget";
 import { YNABConnectButton } from "./header/YNABConnection";
 import BudgetHelperFull from "./widgets/budget-helper/BudgetHelperFull";
-import { log } from "../utils/log";
-import UnsavedChangesModal from "./modals/UnsavedChangesModal";
-import useEvercent from "../hooks/useEvercent";
+import BudgetHelperWidget from "./widgets/budget-helper/BudgetHelperWidget";
 import BudgetAutomationWidget from "./widgets/budget-automation/BudgetAutomationWidget";
 import RegularExpensesWidget from "./widgets/regular-expenses/RegularExpensesWidget";
 import UpcomingExpensesWidget from "./widgets/upcoming-expenses/UpcomingExpensesWidget";
 
-export type WidgetProps = {
-  widgetMadeChanges: boolean;
-  setWidgetMadeChanges: Dispatch<SetStateAction<boolean>>;
-  setOnSaveFn: Dispatch<SetStateAction<(() => void) | undefined>>;
-};
+export type WidgetProps = Pick<
+  ModalProps,
+  "changesMade" | "setChangesMade" | "setOnSaveFn"
+>;
+
+function Widget({
+  name,
+  widgetComponent,
+  fullComponent,
+}: {
+  name: string;
+  widgetComponent: JSX.Element;
+  fullComponent: JSX.Element;
+}) {
+  const { isLoading } = useEvercent();
+  const modalProps = useModal();
+
+  return (
+    <>
+      <Card
+        onClick={modalProps.showModal}
+        className="flex flex-col p-4 hover:cursor-pointer"
+      >
+        <div className="font-cinzel text-center text-3xl  mb-2">{name}</div>
+
+        {isLoading ? (
+          <WidgetLoader />
+        ) : (
+          <div className="flex-grow">{widgetComponent}</div>
+        )}
+      </Card>
+
+      <ModalContent fullScreen={true} modalTitle={name} modalProps={modalProps}>
+        {["Budget Helper", "Budget Automation"].includes(name)
+          ? cloneElement(fullComponent, {
+              widgetProps: {
+                changesMade: modalProps.changesMade,
+                setChangesMade: modalProps.setChangesMade,
+                setOnSaveFn: modalProps.setOnSaveFn,
+              } as WidgetProps,
+            })
+          : fullComponent}
+      </ModalContent>
+    </>
+  );
+}
 
 function MainContent() {
-  const createWidget = (
-    name: string,
-    widgetComponent: JSX.Element,
-    fullComponent: JSX.Element
-  ) => {
-    const [widgetMadeChanges, setWidgetMadeChanges] = useState(false);
-    const [onSaveFn, setOnSaveFn] = useState<(() => void) | undefined>(
-      undefined
-    );
-
-    const { isOpen, showModal, closeModal } = useModal();
-    const {
-      isOpen: isOpenWarning,
-      showModal: showModalWarning,
-      closeModal: closeModalWarning,
-    } = useModal();
-
-    const onExit = (exitType: "back" | "discard" | "save") => {
-      switch (exitType) {
-        case "back":
-          closeModalWarning();
-          break;
-
-        case "discard":
-          closeModalWarning();
-          closeModal();
-          break;
-
-        case "save":
-          if (onSaveFn) onSaveFn();
-
-          closeModalWarning();
-          closeModal();
-          break;
-
-        default:
-          break;
-      }
-    };
-
-    return (
-      <>
-        <Card
-          onClick={showModal}
-          className="flex flex-col p-4 hover:cursor-pointer"
-        >
-          <div className="font-cinzel text-center text-3xl  mb-2">{name}</div>
-
-          {isLoading ? (
-            <WidgetLoader />
-          ) : (
-            <div className="flex-grow">{widgetComponent}</div>
-          )}
-        </Card>
-
-        {isOpen && (
-          <ModalContent
-            fullScreen={true}
-            modalTitle={name}
-            onClose={() => {
-              if (widgetMadeChanges) {
-                showModalWarning();
-              } else {
-                closeModal();
-              }
-            }}
-          >
-            {["Budget Helper", "Budget Automation"].includes(name)
-              ? cloneElement(fullComponent, {
-                  widgetProps: {
-                    widgetMadeChanges,
-                    setWidgetMadeChanges,
-                    setOnSaveFn,
-                  } as WidgetProps,
-                })
-              : fullComponent}
-          </ModalContent>
-        )}
-
-        {isOpenWarning && (
-          <ModalContent
-            fullScreen={false}
-            modalTitle="Unsaved Changes"
-            onClose={closeModalWarning}
-          >
-            <UnsavedChangesModal onExit={onExit} />
-          </ModalContent>
-        )}
-      </>
-    );
-  };
-
   log("RENDERING [MainContent.tsx]");
 
   const { isAuthenticated } = useAuth0();
-  const { isLoading, userData } = useEvercent();
+  const { userData } = useEvercent();
 
   // If the user isn't signed in, show them a message about how to sign in,
   // and a quick overview of how Evercent can be used
@@ -144,32 +92,38 @@ function MainContent() {
     <>
       <div className="h-full w-full flex justify-center">
         <div className="grid grid-cols-2 grid-rows-2 gap-4 p-2 w-[85%]">
-          {createWidget(
-            "Budget Helper",
-            <BudgetHelperWidget />,
-            <BudgetHelperFull />
-          )}
-          {createWidget(
-            "Budget Automation",
-            <BudgetAutomationWidget />,
-            <div className="h-full flex justify-center items-center ">
-              Budget Automation Full
-            </div>
-          )}
-          {createWidget(
-            "Regular Expenses",
-            <RegularExpensesWidget />,
-            <div className="h-full flex justify-center items-center ">
-              Regular Expenses Full
-            </div>
-          )}
-          {createWidget(
-            "Upcoming Expenses",
-            <UpcomingExpensesWidget />,
-            <div className="h-full flex justify-center items-center ">
-              Upcoming Expenses Full
-            </div>
-          )}
+          <Widget
+            name={"Budget Helper"}
+            widgetComponent={<BudgetHelperWidget />}
+            fullComponent={<BudgetHelperFull />}
+          />
+          <Widget
+            name={"Budget Automation"}
+            widgetComponent={<BudgetAutomationWidget />}
+            fullComponent={
+              <div className="h-full flex justify-center items-center ">
+                Budget Automation Full
+              </div>
+            }
+          />
+          <Widget
+            name={"Regular Expenses"}
+            widgetComponent={<RegularExpensesWidget />}
+            fullComponent={
+              <div className="h-full flex justify-center items-center ">
+                Regular Expenses Full
+              </div>
+            }
+          />
+          <Widget
+            name={"Upcoming Expenses"}
+            widgetComponent={<UpcomingExpensesWidget />}
+            fullComponent={
+              <div className="h-full flex justify-center items-center ">
+                Upcoming Expenses Full
+              </div>
+            }
+          />
         </div>
       </div>
     </>

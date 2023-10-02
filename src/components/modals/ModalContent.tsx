@@ -1,25 +1,62 @@
 import React, { ReactNode } from "react";
 import Card from "../elements/Card";
 import MyIcon from "../elements/MyIcon";
-import useModal from "../../hooks/useModal";
+import useModal, { ModalProps } from "../../hooks/useModal";
 import UnsavedChangesModal from "./UnsavedChangesModal";
 import { log } from "../../utils/log";
 
 function ModalContent({
   modalTitle,
   fullScreen,
-  onClose,
+  modalProps,
   children,
 }: {
   modalTitle: string;
   fullScreen: boolean;
-  onClose: () => void;
+  modalProps: ModalProps;
   children?: ReactNode;
 }) {
+  const modalPropsWarning = useModal();
+
+  const onExit = (exitType: "back" | "discard" | "save") => {
+    switch (exitType) {
+      case "back":
+        modalPropsWarning.closeModal();
+        break;
+
+      case "discard":
+        modalProps.setChangesMade(false);
+
+        modalPropsWarning.closeModal();
+        modalProps.closeModal();
+        break;
+
+      case "save":
+        if (modalProps.onSaveFn) modalProps.onSaveFn();
+
+        modalPropsWarning.closeModal();
+        modalProps.closeModal();
+        break;
+
+      default:
+        break;
+    }
+  };
+
+  const close = () => {
+    if (modalProps.changesMade) {
+      modalPropsWarning.showModal();
+    } else {
+      modalProps.closeModal();
+    }
+  };
+
+  if (!modalProps.isOpen) return <></>;
+
   return (
     <>
       <div
-        onClick={onClose}
+        onClick={close}
         className={`fixed top-12 bottom-0 left-0 right-0 opacity-70 bg-black ${
           !fullScreen || "dark:bg-transparent"
         } z-20`}
@@ -31,7 +68,7 @@ function ModalContent({
             : "top-24 left-2 right-2 bottom-24 sm:top-40 sm:left-[35%] sm:right-[35%]"
         }`}
       >
-        <div className="p-1 flex justify-between" onClick={onClose}>
+        <div className="p-1 flex justify-between" onClick={close}>
           <div className="w-12" />
           <p className=" font-cinzel font-light text-center text-3xl">
             {modalTitle}
@@ -45,6 +82,14 @@ function ModalContent({
           {children}
         </div>
       </Card>
+
+      <ModalContent
+        fullScreen={false}
+        modalTitle=""
+        modalProps={modalPropsWarning}
+      >
+        <UnsavedChangesModal onExit={onExit} />
+      </ModalContent>
     </>
   );
 }

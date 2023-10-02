@@ -1,12 +1,12 @@
 import React, { useEffect, useState } from "react";
 import Card from "../elements/Card";
-import { Budget, getBudgetsList, switchBudget } from "../../model/budget";
+import { Budget, getBudgetsList } from "../../model/budget";
 import { useSQLQuery } from "../../hooks/useSQLQuery";
-import { useSQLMutation } from "../../hooks/useSQLMutation";
 import MyButton from "../elements/MyButton";
 import LabelAndValue from "../elements/LabelAndValue";
 import { log } from "../../utils/log";
 import WidgetLoader from "../other/WidgetLoader";
+import useEvercent from "../../hooks/useEvercent";
 
 function BudgetsListModal({
   userID,
@@ -15,7 +15,9 @@ function BudgetsListModal({
   userID: string;
   budget: Budget;
 }) {
-  const [newBudget, setNewBudget] = useState<any>({
+  const { changeBudget, changeBudgetData } = useEvercent();
+
+  const [newBudget, setNewBudget] = useState({
     id: budget.id,
     name: budget.name,
   });
@@ -23,11 +25,6 @@ function BudgetsListModal({
   const { data, isLoading, isError } = useSQLQuery(
     "get-budgets-list",
     getBudgetsList(userID)
-  );
-
-  const { mutate: changeBudget, data: changeBudgetData } = useSQLMutation(
-    ["switch-budget"],
-    switchBudget(userID, newBudget?.id)
   );
 
   useEffect(() => {
@@ -49,7 +46,7 @@ function BudgetsListModal({
       />
 
       <div className={`mt-2 flex-grow w-full flex flex-col px-2`}>
-        {!data ? (
+        {isLoading ? (
           <WidgetLoader />
         ) : (
           <Card className="h-full text-left flex-grow overflow-y-auto">
@@ -79,7 +76,7 @@ function BudgetsListModal({
         buttonText={"Switch Budget"}
         onClick={async () => {
           if (newBudget?.name !== budget.name) {
-            changeBudget();
+            changeBudget({ userID, newBudgetID: newBudget?.id });
           }
         }}
       />

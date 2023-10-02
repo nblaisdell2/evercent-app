@@ -1,12 +1,6 @@
-import React, { Dispatch, SetStateAction } from "react";
-import { format, differenceInDays, parseISO } from "date-fns";
+import React from "react";
+import { format, parseISO } from "date-fns";
 import { ArrowLeftIcon } from "@heroicons/react/24/outline";
-
-import {
-  today,
-  getLocalTimeZone,
-  parseDate as parseDateCalendar,
-} from "@internationalized/date";
 
 import Label from "../../elements/Label";
 import Card from "../../elements/Card";
@@ -23,58 +17,23 @@ import {
 } from "../../../model/category";
 import { getMoneyString } from "../../../utils/util";
 import MySelect from "../../elements/MySelect";
-import { Select } from "../../elements/select/Select";
-import { Item } from "react-stately";
 import { log } from "../../../utils/log";
 import useEvercent from "../../../hooks/useEvercent";
 import { Budget } from "../../../model/budget";
 import { PayFrequency } from "../../../model/userData";
 import PostingMonthBreakdown from "../../other/PostingMonthBreakdown";
+import { BudgetHelperState } from "../../../hooks/useBudgetHelper";
 
-function SelectedCategory({
-  nextPaydate,
-  selectedCategory,
-  setSelectedCategory,
-  updateSelectedCategoryAmount,
-  toggleSelectedCategoryOptions,
-  updateSelectedCategoryExpense,
-  updateSelectedCategoryUpcomingAmount,
-}: {
-  nextPaydate: string;
-  selectedCategory: Category;
-  setSelectedCategory: Dispatch<SetStateAction<Category | undefined>>;
-  updateSelectedCategoryAmount: (
-    category: Category,
-    key: "amount" | "extraAmount",
-    newAmount: number
-  ) => void;
-  updateSelectedCategoryExpense: (
-    category: Category,
-    key:
-      | "nextDueDate"
-      | "isMonthly"
-      | "repeatFreqNum"
-      | "repeatFreqType"
-      | "includeOnChart"
-      | "multipleTransactions",
-    value: any
-  ) => void;
-  toggleSelectedCategoryOptions: (
-    category: Category,
-    checked: boolean,
-    option: string
-  ) => void;
-  updateSelectedCategoryUpcomingAmount: (
-    category: Category,
-    newAmount: number
-  ) => void;
-}) {
+function SelectedCategory({ bhProps }: { bhProps: BudgetHelperState }) {
   const { budget, userData } = useEvercent();
+
+  const selectedCategory = bhProps.selectedCategory as Category;
+
   const upcomingDetails = calculateUpcomingExpense(
     budget as Budget,
     selectedCategory,
     userData?.payFrequency as PayFrequency,
-    nextPaydate
+    bhProps.nextPaydate
   );
 
   log({ selectedCategory, upcomingDetails });
@@ -83,7 +42,7 @@ function SelectedCategory({
     <div className="flex flex-col flex-grow mt-4 overflow-y-auto sm:overflow-y-visible ">
       <div className="inline-flex items-center">
         <div
-          onClick={() => setSelectedCategory(undefined)}
+          onClick={() => bhProps.setSelectedCategory(undefined)}
           className="inline-flex border-b border-transparent hover:border-black dark:hover:border-white hover:cursor-pointer"
         >
           <ArrowLeftIcon className="h-6 w-6 mr-1" />
@@ -108,7 +67,7 @@ function SelectedCategory({
                   <MyInput
                     value={selectedCategory.amount}
                     onChange={(newVal: number) => {
-                      updateSelectedCategoryAmount(
+                      bhProps.updateSelectedCategoryAmount(
                         selectedCategory,
                         "amount",
                         newVal
@@ -122,7 +81,7 @@ function SelectedCategory({
                   <MyInput
                     value={selectedCategory.extraAmount}
                     onChange={(newVal: number) => {
-                      updateSelectedCategoryAmount(
+                      bhProps.updateSelectedCategoryAmount(
                         selectedCategory,
                         "extraAmount",
                         newVal
@@ -139,7 +98,7 @@ function SelectedCategory({
                     <MyToggle
                       checked={isRegularExpense(selectedCategory)}
                       onToggle={(checked) => {
-                        toggleSelectedCategoryOptions(
+                        bhProps.toggleSelectedCategoryOptions(
                           selectedCategory,
                           checked,
                           "Regular Expense"
@@ -153,7 +112,7 @@ function SelectedCategory({
                     <MyToggle
                       checked={isUpcomingExpense(selectedCategory)}
                       onToggle={(checked) => {
-                        toggleSelectedCategoryOptions(
+                        bhProps.toggleSelectedCategoryOptions(
                           selectedCategory,
                           checked,
                           "Upcoming Expense"
@@ -223,6 +182,7 @@ function SelectedCategory({
             </div>
 
             {/* bottom section */}
+            {/* Regular Expense section */}
             {isRegularExpense(selectedCategory) && (
               <Card className="h-full space-y-8 p-1">
                 <div className="text-center font-bold text-xl">
@@ -233,13 +193,13 @@ function SelectedCategory({
                     <div className="flex flex-col items-center">
                       <div className="font-semibold">Next Due Date</div>
                       <MyDatePicker
-                        minValue={nextPaydate}
+                        minValue={bhProps.nextPaydate}
                         value={
                           selectedCategory.regularExpenseDetails
                             ?.nextDueDate as string
                         }
                         onChange={(newDate: string) => {
-                          updateSelectedCategoryExpense(
+                          bhProps.updateSelectedCategoryExpense(
                             selectedCategory,
                             "nextDueDate",
                             newDate
@@ -259,7 +219,7 @@ function SelectedCategory({
                         leftValue={"Monthly"}
                         rightValue={"By Date"}
                         onToggle={(toggleValue: boolean) => {
-                          updateSelectedCategoryExpense(
+                          bhProps.updateSelectedCategoryExpense(
                             selectedCategory,
                             "isMonthly",
                             toggleValue
@@ -287,7 +247,7 @@ function SelectedCategory({
                               "12",
                             ]}
                             onSelectionChange={(sel) => {
-                              updateSelectedCategoryExpense(
+                              bhProps.updateSelectedCategoryExpense(
                                 selectedCategory,
                                 "repeatFreqNum",
                                 parseInt(sel.toString())
@@ -306,7 +266,7 @@ function SelectedCategory({
                           <MySelect
                             values={["Months", "Years"]}
                             onSelectionChange={(sel) => {
-                              updateSelectedCategoryExpense(
+                              bhProps.updateSelectedCategoryExpense(
                                 selectedCategory,
                                 "repeatFreqType",
                                 sel.toString()
@@ -335,7 +295,7 @@ function SelectedCategory({
                             : true
                         }
                         onToggle={(checked) => {
-                          updateSelectedCategoryExpense(
+                          bhProps.updateSelectedCategoryExpense(
                             selectedCategory,
                             "includeOnChart",
                             checked
@@ -355,7 +315,7 @@ function SelectedCategory({
                             : true
                         }
                         onToggle={(checked) => {
-                          updateSelectedCategoryExpense(
+                          bhProps.updateSelectedCategoryExpense(
                             selectedCategory,
                             "multipleTransactions",
                             checked
@@ -368,6 +328,7 @@ function SelectedCategory({
               </Card>
             )}
 
+            {/* Upcoming Expense section */}
             {isUpcomingExpense(selectedCategory) && (
               <Card className="flex flex-col flex-grow p-1 text-xl">
                 <div className="text-center font-bold text-xl">
@@ -381,7 +342,7 @@ function SelectedCategory({
                         selectedCategory.upcomingDetails?.expenseAmount || 0
                       }
                       onChange={(newVal: number) => {
-                        updateSelectedCategoryUpcomingAmount(
+                        bhProps.updateSelectedCategoryUpcomingAmount(
                           selectedCategory,
                           newVal
                         );

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import Label from "../elements/Label";
 import RadioButtonGroup from "../elements/RadioButtonGroup";
 import MyIcon from "../elements/MyIcon";
@@ -7,13 +7,8 @@ import MyButton from "../elements/MyButton";
 import MyDatePicker from "../elements/MyDatePicker";
 import { log } from "../../utils/log";
 import { startOfToday } from "date-fns";
-import { useSQLMutation } from "../../hooks/useSQLMutation";
-import { EvercentData } from "../../model/evercent";
-import {
-  PayFrequency,
-  UserData,
-  updateUserDetails,
-} from "../../model/userData";
+import { UserData } from "../../model/userData";
+import useEvercent from "../../hooks/useEvercent";
 
 function UpdateUserDetailsModal({
   userData,
@@ -22,6 +17,8 @@ function UpdateUserDetailsModal({
   userData: UserData;
   closeModal: () => void;
 }) {
+  const { updateUserDetails } = useEvercent();
+
   const [newMonthlyIncome, setNewMonthlyIncome] = useState(
     userData.monthlyIncome
   );
@@ -29,39 +26,6 @@ function UpdateUserDetailsModal({
     userData.payFrequency
   );
   const [newNextPaydate, setNewNextPaydate] = useState(userData.nextPaydate);
-
-  const { mutate: saveNewUserDetails, data: newUserData } = useSQLMutation<
-    EvercentData,
-    any
-  >(
-    ["save-user-details"],
-    updateUserDetails(
-      userData,
-      newMonthlyIncome,
-      newPayFrequency,
-      newNextPaydate
-    ),
-    ["get-all-evercent-data"],
-    false,
-    (old: EvercentData | undefined) => {
-      if (old)
-        return {
-          ...old,
-          userData: {
-            ...userData,
-            monthlyIncome: newMonthlyIncome,
-            payFrequency: newPayFrequency as PayFrequency,
-            nextPaydate: newNextPaydate,
-          },
-        };
-    }
-  );
-
-  useEffect(() => {
-    if (newUserData) {
-      closeModal();
-    }
-  }, [newUserData]);
 
   return (
     <div className="h-full flex flex-col">
@@ -106,8 +70,15 @@ function UpdateUserDetailsModal({
               className="h-6 w-6 text-green-600 stroke-2"
             />
           }
-          onClick={saveNewUserDetails}
-          className=""
+          onClick={() => {
+            updateUserDetails({
+              userData,
+              monthlyIncome: newMonthlyIncome,
+              payFrequency: newPayFrequency,
+              nextPaydate: newNextPaydate,
+            });
+            closeModal();
+          }}
         />
       </div>
     </div>

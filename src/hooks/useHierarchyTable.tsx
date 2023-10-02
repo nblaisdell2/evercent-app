@@ -15,31 +15,17 @@ export type HierarchyTableState = {
 };
 
 function useHierarchyTable(
-  from: string,
-  data: CheckboxItem[]
+  data: any,
+  createListFn: (data: any, expandedItems?: CheckboxItem[]) => CheckboxItem[]
 ): HierarchyTableState {
   const [expandedItems, setExpandedItems] = useState<CheckboxItem[]>([]);
-  const [listData, setListData] = useState<CheckboxItem[]>(data);
+  const [listData, setListData] = useState<CheckboxItem[]>([]);
 
-  // useEffect(() => {
-  //   setListData((prev) => {
-  //     // console.log("expanded items", expandedItems);
-  //     let newList = createListFn(data);
-  //     for (let i = 0; i < newList.length; i++) {
-  //       const currItem = newList[i];
-  //       if (currItem) {
-  //         const foundExpanded = expandedItems.find((c) => c.id == currItem.id);
-  //         if (foundExpanded) {
-  //           // if (prev.find((p) => p.id == currItem.id)?.expanded)
-  //           currItem.expanded = true;
-  //         }
-  //       }
-  //     }
-
-  //     console.log("newList", newList);
-  //     return newList;
-  //   });
-  // }, [data]);
+  useEffect(() => {
+    if (listData.length == 0) {
+      setListData(createListFn(data, expandedItems));
+    }
+  }, [data]);
 
   return {
     listData,

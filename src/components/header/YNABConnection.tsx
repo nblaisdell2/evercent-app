@@ -1,23 +1,18 @@
 import React from "react";
 import useModal from "../../hooks/useModal";
-import { useSQLMutation } from "../../hooks/useSQLMutation";
-import { Budget, connectToYNAB } from "../../model/budget";
 import MyIcon from "../elements/MyIcon";
 import Label from "../elements/Label";
 import ModalContent from "../modals/ModalContent";
 import BudgetsListModal from "../modals/BudgetsListModal";
-import SkeletonLoader from "tiny-skeleton-loader-react";
 
 import LabelAndValue from "../elements/LabelAndValue";
+import useEvercent from "../../hooks/useEvercent";
 
 export function YNABConnectButton({ userID }: { userID: string }) {
-  const { mutate: connect, error: connectError } = useSQLMutation(
-    ["connect-to-ynab"],
-    connectToYNAB(userID)
-  );
+  const { connectToYNAB } = useEvercent();
 
   return (
-    <a onClick={() => connect()}>
+    <a onClick={() => connectToYNAB({ userID })}>
       <div className="ml-0 sm:ml-2 flex items-center space-x-1 underline sm:no-underline hover:underline hover:cursor-pointer hover:text-blue-400">
         <div className="font-bold text-3xl sm:text-base">Connect to YNAB</div>
         <MyIcon
@@ -29,16 +24,9 @@ export function YNABConnectButton({ userID }: { userID: string }) {
   );
 }
 
-function YNABConnection({
-  isLoading,
-  userID,
-  budget,
-}: {
-  isLoading: boolean;
-  userID: string;
-  budget: Budget | undefined;
-}) {
-  const { isOpen, showModal, closeModal } = useModal();
+function YNABConnection() {
+  const { isLoading, userData, budget } = useEvercent();
+  const modalProps = useModal();
 
   const openBudgetURL = (budgetID: string) => {
     return "https://app.ynab.com/" + budgetID.toLowerCase() + "/budget";
@@ -54,7 +42,7 @@ function YNABConnection({
         />
       ) : !budget ? (
         <div className="h-full flex justify-center items-center ">
-          <YNABConnectButton userID={userID} />
+          <YNABConnectButton userID={userData?.userID as string} />
         </div>
       ) : (
         <>
@@ -65,7 +53,7 @@ function YNABConnection({
               <MyIcon
                 iconType={"EditIcon"}
                 className="h-6 w-6 stroke-2 hover:cursor-pointer "
-                onClick={showModal}
+                onClick={modalProps.showModal}
               />
 
               <div>
@@ -83,15 +71,16 @@ function YNABConnection({
             </div>
           </div>
 
-          {isOpen && (
-            <ModalContent
-              fullScreen={false}
-              modalTitle={"Budgets List"}
-              onClose={closeModal}
-            >
-              <BudgetsListModal userID={userID} budget={budget} />
-            </ModalContent>
-          )}
+          <ModalContent
+            fullScreen={false}
+            modalTitle={"Budgets List"}
+            modalProps={modalProps}
+          >
+            <BudgetsListModal
+              userID={userData?.userID as string}
+              budget={budget}
+            />
+          </ModalContent>
         </>
       )}
     </div>

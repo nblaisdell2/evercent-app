@@ -1,7 +1,13 @@
 import { AutoRun } from "./autoRun";
 import { UserData } from "./userData";
 import { Budget } from "./budget";
-import { CategoryGroup, ExcludedCategory } from "./category";
+import {
+  CategoryGroup,
+  ExcludedCategory,
+  getIncludedCategoryGroups,
+} from "./category";
+import { getAPIResponse } from "../utils/api";
+import { log } from "../utils/log";
 
 export type EvercentData = {
   userData: UserData | undefined;
@@ -11,4 +17,67 @@ export type EvercentData = {
   excludedCategories: ExcludedCategory[];
   autoRuns: AutoRun[];
   pastRuns: AutoRun[];
+};
+
+export const getAllEvercentData =
+  (userEmail: string | undefined) => async (): Promise<EvercentData> => {
+    if (!userEmail) throw new Error("User Email required to get Evercent data");
+
+    const { data, error, headers } = await getAPIResponse({
+      method: "GET",
+      url: "/user",
+      params: {
+        UserEmail: userEmail,
+      },
+    });
+
+    if (error) throw new Error(error);
+
+    const evercentData: EvercentData = {
+      userData: data.userData,
+      budget: data.budget,
+      categoryGroups: getIncludedCategoryGroups(
+        data.categoryGroups,
+        data.excludedCategories
+      ),
+      categoryGroupsAll: data.categoryGroups,
+      excludedCategories: data.excludedCategories,
+      autoRuns: data.autoRuns,
+      pastRuns: data.pastRuns,
+    };
+    log("Getting ALL evercent data", evercentData);
+
+    return evercentData;
+  };
+
+export const updateCachedUserData = (
+  old: EvercentData | undefined,
+  newData: UserData | undefined
+) => {
+  if (old && newData) {
+    log("updating cached user data");
+    return {
+      ...old,
+      userData: { ...newData },
+    };
+  }
+};
+
+export const updateCachedCategories = (
+  old: EvercentData | undefined,
+  newData:
+    | {
+        newCategories: CategoryGroup[];
+        excludedCategories: ExcludedCategory[];
+      }
+    | undefined
+) => {
+  if (old && newData) {
+    log("updating cached categories", { old, newData });
+    return {
+      ...old,
+      categoryGroups: [...newData.newCategories],
+      excludedCategories: [...newData.excludedCategories],
+    };
+  }
 };

@@ -8,16 +8,9 @@ import { differenceInDays, startOfToday, parseISO, format } from "date-fns";
 import UpdateUserDetailsModal from "../modals/UpdateUserDetailsModal";
 import { UserData } from "../../model/userData";
 import { log } from "../../utils/log";
+import useEvercent from "../../hooks/useEvercent";
 
-function UserDetails({
-  userData,
-  isLoading,
-}: {
-  userData: UserData | undefined;
-  isLoading: boolean;
-}) {
-  const { isOpen, showModal, closeModal } = useModal();
-
+function UserDetails() {
   const getUserData = (userData: UserData | undefined) => {
     if (!userData)
       return {
@@ -28,7 +21,15 @@ function UserDetails({
     return userData;
   };
 
+  const getDaysAwayString = (daysAway: number) => {
+    return "(" + daysAway + " " + (daysAway == 1 ? "day" : "days") + ")";
+  };
+
+  const { isLoading, userData } = useEvercent();
+  const modalProps = useModal();
+
   const { monthlyIncome, nextPaydate, payFrequency } = getUserData(userData);
+
   const daysAwayFromPayday = differenceInDays(
     parseISO(nextPaydate),
     startOfToday()
@@ -78,11 +79,8 @@ function UserDetails({
                   {monthlyIncome == 0
                     ? "----"
                     : formattedDate +
-                      " (" +
-                      daysAwayFromPayday +
                       " " +
-                      (daysAwayFromPayday == 1 ? "day" : "days") +
-                      ")"}
+                      getDaysAwayString(daysAwayFromPayday)}
                 </div>
                 <div className="block sm:hidden font-bold text-sm sm:text-base">
                   {monthlyIncome == 0 ? (
@@ -91,11 +89,7 @@ function UserDetails({
                     <div>
                       <div>{formattedDate}</div>
                       <div className="text-xs sm:text-base -mt-1 sm:mt-0">
-                        {"(" +
-                          daysAwayFromPayday +
-                          " " +
-                          (daysAwayFromPayday == 1 ? "day" : "days") +
-                          ")"}
+                        {getDaysAwayString(daysAwayFromPayday)}
                       </div>
                     </div>
                   )}
@@ -117,24 +111,22 @@ function UserDetails({
             <MyIcon
               iconType={"EditIcon"}
               className=" h-6 w-6 sm:h-8 sm:w-8 -mr-1 sm:mr-0 stroke-2 hover:cursor-pointer"
-              onClick={showModal}
+              onClick={modalProps.showModal}
             />
           </>
         )}
       </div>
 
-      {isOpen && (
-        <ModalContent
-          fullScreen={false}
-          modalTitle={"User Details"}
-          onClose={closeModal}
-        >
-          <UpdateUserDetailsModal
-            userData={userData as UserData}
-            closeModal={closeModal}
-          />
-        </ModalContent>
-      )}
+      <ModalContent
+        fullScreen={false}
+        modalTitle={"User Details"}
+        modalProps={modalProps}
+      >
+        <UpdateUserDetailsModal
+          userData={userData as UserData}
+          closeModal={modalProps.closeModal}
+        />
+      </ModalContent>
     </>
   );
 }

@@ -36,7 +36,20 @@ export type BudgetMonthCategory = {
   available: number;
 };
 
-export const connectToYNAB = (userID: string) => async () => {
+export const getBudgetsList = (userID: string) => async () => {
+  const { data, error, headers } = await getAPIResponse({
+    method: "GET",
+    url: "/budget/getBudgetsList",
+    params: {
+      UserID: userID,
+    },
+  });
+
+  if (error) throw new Error(error);
+  return data;
+};
+
+export const connectToYNAB = async ({ userID }: { userID: string }) => {
   if (!userID) throw new Error("UserID required for connecting to YNAB");
 
   const { data, error, headers } = await getAPIResponse({
@@ -52,12 +65,19 @@ export const connectToYNAB = (userID: string) => async () => {
   window.location.href = data.url;
 };
 
-export const getBudgetsList = (userID: string) => async () => {
+export const switchBudget = async ({
+  userID,
+  newBudgetID,
+}: {
+  userID: string;
+  newBudgetID: string;
+}) => {
   const { data, error, headers } = await getAPIResponse({
-    method: "GET",
-    url: "/budget/getBudgetsList",
+    method: "POST",
+    url: "/budget/switchBudget",
     params: {
       UserID: userID,
+      NewBudgetID: newBudgetID,
     },
   });
 
@@ -65,45 +85,34 @@ export const getBudgetsList = (userID: string) => async () => {
   return data;
 };
 
-export const switchBudget =
-  (userID: string, newBudgetID: string) => async () => {
-    const { data, error, headers } = await getAPIResponse({
-      method: "POST",
-      url: "/budget/switchBudget",
-      params: {
-        UserID: userID,
-        NewBudgetID: newBudgetID,
-      },
-    });
+export const updateBudgetCategoryAmount = async ({
+  userID,
+  budgetID,
+  categoryID,
+  month,
+  newBudgetedAmount,
+}: {
+  userID: string;
+  budgetID: string;
+  categoryID: string;
+  month: string;
+  newBudgetedAmount: number;
+}) => {
+  const { data, error, headers } = await getAPIResponse({
+    method: "POST",
+    url: "/budget/updateCategoryAmount",
+    params: {
+      UserID: userID,
+      BudgetID: budgetID,
+      CategoryID: categoryID,
+      Month: month,
+      NewBudgetedAmount: newBudgetedAmount,
+    },
+  });
 
-    if (error) throw new Error(error);
-    return data;
-  };
-
-export const updateBudgetCategoryAmount =
-  (
-    userID: string,
-    budgetID: string,
-    categoryID: string,
-    month: string,
-    newBudgetedAmount: number
-  ) =>
-  async () => {
-    const { data, error, headers } = await getAPIResponse({
-      method: "POST",
-      url: "/budget/updateCategoryAmount",
-      params: {
-        UserID: userID,
-        BudgetID: budgetID,
-        CategoryID: categoryID,
-        Month: month,
-        NewBudgetedAmount: newBudgetedAmount,
-      },
-    });
-
-    if (error) throw new Error(error);
-    return data;
-  };
+  if (error) throw new Error(error);
+  return data;
+};
 
 /////////////////
 

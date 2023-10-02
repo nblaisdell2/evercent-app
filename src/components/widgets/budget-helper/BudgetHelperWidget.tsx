@@ -1,7 +1,11 @@
 import React from "react";
 import Amounts from "./Amounts";
 import BudgetHelperCharts from "./BudgetHelperCharts";
-import { CategoryGroup, getTotalAmountUsed } from "../../../model/category";
+import {
+  CategoryGroup,
+  getCategoryGroupsWithAmounts,
+  getTotalAmountUsed,
+} from "../../../model/category";
 import { getPercentString } from "../../../utils/util";
 import useEvercent from "../../../hooks/useEvercent";
 
@@ -40,8 +44,6 @@ const CHART_COLORS = [
 ];
 
 function BudgetHelperWidget() {
-  const { userData, categoryGroups } = useEvercent();
-
   const getLegendGrid = (catList: CategoryGroup[], numRows: number) => {
     const totalUsed = getTotalAmountUsed(catList, false);
     const monthlyIncome = userData?.monthlyIncome || 0;
@@ -118,9 +120,8 @@ function BudgetHelperWidget() {
     );
   };
 
-  const groupsWithAmounts = categoryGroups.filter(
-    (grp) => grp.adjustedAmountPlusExtra > 0
-  );
+  const { userData, categoryGroups } = useEvercent();
+  const groupsWithAmounts = getCategoryGroupsWithAmounts(categoryGroups);
 
   return (
     <div className="h-full flex flex-col space-y-2">

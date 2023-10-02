@@ -5,7 +5,6 @@ import { log } from "./utils/log";
 import MainContent from "./components/MainContent";
 import LoadingScreen from "./components/other/LoadingScreen";
 import Header from "./components/Header";
-import useEvercent from "./hooks/useEvercent";
 
 function App() {
   log("RENDERING [App.tsx]");
@@ -15,12 +14,8 @@ function App() {
 
   return (
     <div className={`flex flex-col h-screen bg-primary text-color-primary`}>
-      <div>
-        <Header />
-      </div>
-      <div className="flex-grow">
-        <MainContent />
-      </div>
+      <Header />
+      <MainContent />
     </div>
   );
 }

@@ -1,50 +1,29 @@
-import React, { Dispatch, SetStateAction } from "react";
-import { CheckIcon, PencilSquareIcon } from "@heroicons/react/24/outline";
+import React from "react";
+import { CheckIcon } from "@heroicons/react/24/outline";
 import Card from "../../elements/Card";
 import Label from "../../elements/Label";
 import {
   Category,
   CategoryGroup,
   getAllCategories,
-  getGroupAmounts,
   getPercentIncome,
-  getPercentIncomeGroup,
   isRegularExpense,
   isUpcomingExpense,
 } from "../../../model/category";
 import HierarchyTable, { CheckboxItem } from "../../elements/HierarchyTable";
-import useHierarchyTable, {
-  HierarchyTableState,
-} from "../../../hooks/useHierarchyTable";
 import { getMoneyString, getPercentString } from "../../../utils/util";
 import MyButton from "../../elements/MyButton";
 import MyIcon from "../../elements/MyIcon";
 import ModalContent from "../../modals/ModalContent";
 import useModal from "../../../hooks/useModal";
 import AllCategoriesEditable from "../../modals/AllCategoriesEditable";
-import { log } from "../../../utils/log";
+import { BudgetHelperState } from "../../../hooks/useBudgetHelper";
+import useEvercent from "../../../hooks/useEvercent";
 import { Budget } from "../../../model/budget";
 
-function CategoryList({
-  budget,
-  monthlyIncome,
-  categoryGroups,
-  hierarchyProps,
-  setSelectedCategory,
-  updateExcludedCategories,
-  saveCategories,
-  changesMade,
-}: {
-  budget: Budget;
-  monthlyIncome: number;
-  categoryGroups: CategoryGroup[];
-  hierarchyProps: HierarchyTableState;
-  setSelectedCategory: Dispatch<SetStateAction<Category | undefined>>;
-  updateExcludedCategories: (items: CheckboxItem[]) => void;
-  saveCategories: () => void;
-  changesMade: boolean;
-}) {
-  const { isOpen, showModal, closeModal: closeModalEditable } = useModal();
+function CategoryList({ bhProps }: { bhProps: BudgetHelperState }) {
+  const { budget } = useEvercent();
+  const modalProps = useModal();
 
   // const {
   //   isOpen: isOpenSaving,
@@ -81,7 +60,7 @@ function CategoryList({
           {getMoneyString(grp.adjustedAmountPlusExtra)}
         </div>
         <div className="w-[25%] sm:w-[14%]">
-          {getPercentString(getPercentIncomeGroup(monthlyIncome, grp))}
+          {getPercentString(getPercentIncome(bhProps.monthlyIncome, grp))}
         </div>
       </div>
     );
@@ -93,7 +72,7 @@ function CategoryList({
         key={category.name}
         className="flex py-[2px] sm:py-0 w-full font-normal text-right text-sm hover:bg-gray-200 dark:hover:bg-gray-800 hover:cursor-pointer hover:rounded-md"
         onClick={() => {
-          setSelectedCategory(category);
+          bhProps.setSelectedCategory(category);
         }}
       >
         <div className="w-[50%] sm:w-[26%] text-left">{category.name}</div>
@@ -120,7 +99,7 @@ function CategoryList({
           {getMoneyString(category.adjustedAmountPlusExtra, 2)}
         </div>
         <div className="w-[25%] sm:w-[14%]">
-          {getPercentString(getPercentIncome(monthlyIncome, category))}
+          {getPercentString(getPercentIncome(bhProps.monthlyIncome, category))}
         </div>
       </div>
     );
@@ -128,7 +107,9 @@ function CategoryList({
 
   const getRowContent = (item: CheckboxItem, indent: number) => {
     const itemID = indent == 0 ? item.id : item.parentId;
-    const grp = categoryGroups.filter((cGrp) => cGrp.groupID == itemID)[0];
+    const grp = bhProps.categoryList.filter(
+      (cGrp) => cGrp.groupID == itemID
+    )[0];
     if (grp) {
       switch (indent) {
         case 0:
@@ -149,69 +130,6 @@ function CategoryList({
     return <></>;
   };
 
-  const createList = (
-    data: CategoryGroup[],
-    expandedItems?: CheckboxItem[]
-  ) => {
-    log("Creating collapsible category list", {
-      data,
-      expandedItems,
-    });
-    if (!data) return [];
-
-    let itemList: CheckboxItem[] = [];
-    let currItemGroup: CategoryGroup;
-    let currItemCat;
-    for (let i = 0; i < data.length; i++) {
-      currItemGroup = data[i];
-      if (currItemGroup.categories.length > 0) {
-        const isExpanded =
-          expandedItems &&
-          expandedItems.length > 0 &&
-          expandedItems.some(
-            (e) =>
-              e.expanded &&
-              e.id.toLowerCase() == currItemGroup.groupID.toLowerCase()
-          );
-        itemList.push({
-          parentId: "",
-          id: currItemGroup.groupID,
-          name: currItemGroup.groupName,
-          expanded: isExpanded,
-        });
-
-        for (let j = 0; j < currItemGroup.categories.length; j++) {
-          currItemCat = currItemGroup.categories[j];
-
-          itemList.push({
-            parentId: currItemGroup.groupID,
-            id: currItemCat.categoryID,
-            name: currItemCat.name,
-          });
-        }
-      }
-    }
-
-    // log("item list", itemList);
-    return itemList;
-  };
-
-  // const saveCategories = async () => {
-  //   if (changesMade) {
-  //     loadingProps.setStartSaving();
-  //     showModalSaving();
-  //   }
-
-  //   await onSave();
-
-  //   if (changesMade) loadingProps.setFinishedSaving();
-  // };
-
-  // log("RENDERING [CategoryList.tsx]", {
-  //   categoryGroups,
-  //   listData: hierarchyProps.listData,
-  // });
-
   return (
     <div className="flex-grow mt-4 font-mplus text-sm sm:text-base flex flex-col">
       <Label label="Category List" className="text-xl" />
@@ -229,7 +147,7 @@ function CategoryList({
           </div>
           <div className="flex-grow h-0 overflow-y-scroll no-scrollbar">
             <HierarchyTable
-              tableData={hierarchyProps}
+              tableData={bhProps.hierarchyProps}
               getRowContent={getRowContent}
               indentPixels={"20px"}
               isCollapsible={true}
@@ -241,7 +159,7 @@ function CategoryList({
             <Label label="Categories Selected" className="text-xl" />
             <div className="flex justify-center items-center">
               <div className="font-bold text-3xl">
-                {getAllCategories(categoryGroups, true).length}
+                {getAllCategories(bhProps.categoryList, true).length}
               </div>
 
               {/* Edit Icon */}
@@ -249,7 +167,7 @@ function CategoryList({
                 iconType={"EditIcon"}
                 className="h-8 w-8 stroke-2 hover:cursor-pointer"
                 onClick={() => {
-                  showModal();
+                  modalProps.showModal();
                 }}
               />
             </div>
@@ -258,28 +176,25 @@ function CategoryList({
           <MyButton
             buttonText={"Save"}
             icon={<CheckIcon className="h-6 w-6 text-green-600 stroke-2" />}
-            disabled={!changesMade}
-            onClick={saveCategories}
+            disabled={!bhProps.changesMade}
+            onClick={bhProps.saveCategories}
             className="py-2"
           />
         </div>
       </div>
 
-      {isOpen && (
-        <ModalContent
-          modalTitle="Category List"
-          fullScreen={false}
-          onClose={closeModalEditable}
-        >
-          <AllCategoriesEditable
-            budget={budget}
-            categoryGroups={categoryGroups}
-            // editableCategoryList={editableCategoryList}
-            updateExcludedCategories={updateExcludedCategories}
-            closeModal={closeModalEditable}
-          />
-        </ModalContent>
-      )}
+      <ModalContent
+        modalTitle="Category List"
+        fullScreen={false}
+        modalProps={modalProps}
+      >
+        <AllCategoriesEditable
+          budget={budget as Budget}
+          categoryGroups={bhProps.categoryList}
+          updateExcludedCategories={bhProps.updateExcludedCategories}
+          closeModal={modalProps.closeModal}
+        />
+      </ModalContent>
 
       {/* {isOpenSaving && (
         <ModalContent

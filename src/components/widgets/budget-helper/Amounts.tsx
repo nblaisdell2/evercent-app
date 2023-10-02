@@ -1,8 +1,7 @@
 import React from "react";
 import LabelAndValue from "../../elements/LabelAndValue";
 import { getMoneyString, getPercentString } from "../../../utils/util";
-import { CategoryGroup } from "../../../model/category";
-import { getTotalAmountUsed } from "../../../model/userData";
+import { CategoryGroup, getTotalAmountUsed } from "../../../model/category";
 import { log } from "../../../utils/log";
 
 function Amounts({
@@ -14,7 +13,7 @@ function Amounts({
   categoryGroups: CategoryGroup[];
   type: "widget" | "full";
 }) {
-  const totalAmountUsed = getTotalAmountUsed(categoryGroups);
+  const totalAmountUsed = getTotalAmountUsed(categoryGroups, false);
 
   return (
     <div
@@ -38,8 +37,8 @@ function Amounts({
           <LabelAndValue
             label={"Amount Remaining"}
             value={getMoneyString(monthlyIncome - totalAmountUsed)}
-            classNameLabel={"text-sm sm:text-xl"}
-            classNameValue={`text-2xl sm:text-3xl ${
+            classNameLabel={"text-xl"}
+            classNameValue={`text-3xl ${
               monthlyIncome - totalAmountUsed < 0 && "text-red-500"
             }`}
           />
@@ -50,8 +49,8 @@ function Amounts({
           <LabelAndValue
             label={"Amount Used"}
             value={getMoneyString(totalAmountUsed)}
-            classNameLabel={"text-sm sm:text-xl"}
-            classNameValue={`text-2xl sm:text-3xl`}
+            classNameLabel={"text-xl"}
+            classNameValue={`text-3xl`}
           />
         </div>
       </div>
@@ -61,8 +60,8 @@ function Amounts({
             <LabelAndValue
               label={"% Used"}
               value={getPercentString(totalAmountUsed / monthlyIncome)}
-              classNameLabel={"text-sm sm:text-xl"}
-              classNameValue={`text-2xl sm:text-3xl`}
+              classNameLabel={"text-xl"}
+              classNameValue={`text-3xl`}
             />
           </div>
         </div>

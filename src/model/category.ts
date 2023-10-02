@@ -18,7 +18,7 @@ import {
   getBudgetCategory,
   getBudgetMonth,
 } from "./budget";
-import { PayFrequency, UserData } from "./userData";
+import { PayFrequency, UserData, getAmountByPayFrequency } from "./userData";
 
 export type CategoryGroup = {
   groupID: string;
@@ -83,412 +83,6 @@ export type ExcludedCategory = Pick<
   "guid" | "categoryGroupID" | "categoryID"
 >;
 
-export const getIncludedCategoryGroups = (
-  categoryGroups: CategoryGroup[],
-  excludedCategories: ExcludedCategory[]
-) => {
-  return categoryGroups.reduce((prev, curr) => {
-    const excCatsThisGroup = excludedCategories.filter(
-      (e) => e.categoryGroupID == curr.groupID
-    );
-    if (curr.categories.length == excCatsThisGroup.length) return prev;
-    if (excCatsThisGroup.length == 0) return [...prev, curr];
-
-    const newCategories = curr.categories.reduce((prev2, curr2) => {
-      if (excCatsThisGroup.some((e) => e.guid == curr2.guid)) {
-        return prev2;
-      }
-      return [...prev2, curr2];
-    }, [] as Category[]);
-
-    return [
-      ...prev,
-      {
-        ...curr,
-        categories: newCategories,
-      },
-    ];
-  }, [] as CategoryGroup[]);
-};
-
-export const getAllCategories = (
-  categoryGroups: CategoryGroup[],
-  includeOnChartAdded: boolean
-) => {
-  return categoryGroups.reduce((prev, curr) => {
-    if (!includeOnChartAdded) {
-      return [
-        ...prev,
-        ...curr.categories.filter(
-          (c) =>
-            c.regularExpenseDetails == null ||
-            c.regularExpenseDetails.includeOnChart
-        ),
-      ];
-    }
-    return [...prev, ...curr.categories];
-  }, [] as Category[]);
-};
-
-export const getTotalAmountUsed = (
-  categoryGroups: CategoryGroup[],
-  includeOnChartAdded: boolean
-) => {
-  return sum(
-    getAllCategories(categoryGroups, includeOnChartAdded),
-    "adjustedAmountPlusExtra"
-  );
-};
-
-export const createRegularExpense = (
-  guid: string,
-  nextPaydate: string
-): RegularExpenses => {
-  return {
-    guid: guid,
-    isMonthly: true,
-    nextDueDate: nextPaydate,
-    monthsDivisor: 1,
-    repeatFreqNum: 1,
-    repeatFreqType: "Months",
-    includeOnChart: true,
-    multipleTransactions: false,
-  };
-};
-
-export const createUpcomingExpense = (guid: string): UpcomingExpenses => {
-  return {
-    guid,
-    expenseAmount: 0,
-  };
-};
-
-export const calculateUpcomingExpense = (
-  budget: Budget,
-  category: Category,
-  payFrequency: PayFrequency,
-  nextPaydate: string
-): UpcomingExpenseDetails | null => {
-  if (!isUpcomingExpense(category)) return null;
-  const totalAmt = category.upcomingDetails?.expenseAmount || 0;
-  const bc = getBudgetCategory(
-    getBudgetMonth(budget.months, new Date()),
-    category.categoryGroupID,
-    category.categoryID
-  );
-  const availableAmt = bc.available;
-
-  if (availableAmt >= totalAmt) {
-    return {
-      guid: category.guid,
-      categoryName: category.name,
-      purchaseDate: new Date().toISOString(),
-      daysAway: 0,
-      paychecksAway: 0,
-      amountSaved: availableAmt,
-      totalAmount: totalAmt,
-    };
-  }
-
-  const neededToSave = totalAmt - availableAmt;
-  const amtSavedPerPaycheck = getAmountByPayFrequency(
-    category.adjustedAmountPlusExtra,
-    payFrequency
-  );
-
-  // log("  ", { neededToSave, amtSavedPerPaycheck, availableAmt });
-
-  const numPaychecks = Math.ceil(neededToSave / amtSavedPerPaycheck) - 1;
-  const dtCurrPaydate = parseISO(nextPaydate);
-
-  // log("  ", { numPaychecks, dtCurrPaydate });
-  let dtUpcomingPaydate = new Date();
-  if (payFrequency == "Weekly") {
-    dtUpcomingPaydate = addWeeks(dtCurrPaydate, numPaychecks);
-  } else if (payFrequency == "Every 2 Weeks") {
-    dtUpcomingPaydate = addWeeks(dtCurrPaydate, numPaychecks * 2);
-  } else if (payFrequency == "Monthly") {
-    dtUpcomingPaydate = addMonths(dtCurrPaydate, numPaychecks);
-  }
-
-  // log("  ", { dtUpcomingPaydate });
-
-  const daysAway = differenceInDays(dtUpcomingPaydate, new Date());
-
-  // log("  ", { daysAway });
-  return {
-    guid: category.guid,
-    categoryName: category.name,
-    purchaseDate: dtUpcomingPaydate.toISOString(),
-    daysAway: daysAway,
-    paychecksAway: numPaychecks,
-    amountSaved: availableAmt,
-    totalAmount: totalAmt,
-  };
-};
-
-export const getAmountByPayFrequency = (
-  amount: number,
-  payFreq: PayFrequency
-) => {
-  switch (payFreq) {
-    case "Weekly":
-      return amount / 4;
-    case "Every 2 Weeks":
-      return amount / 2;
-    case "Monthly":
-      return amount;
-    default:
-      return 0;
-  }
-};
-
-export const toggleCategoryOptions = (
-  userData: UserData,
-  budget: Budget,
-  category: Category,
-  checked: boolean,
-  option: string
-) => {
-  let newCategory = { ...category };
-
-  const isRegularExpense = option == "Regular Expense" ? checked : false;
-  const isUpcomingExpense = option == "Upcoming Expense" ? checked : false;
-
-  newCategory.regularExpenseDetails = !isRegularExpense
-    ? null
-    : createRegularExpense(newCategory.guid, userData.nextPaydate);
-
-  newCategory.upcomingDetails = !isUpcomingExpense
-    ? null
-    : createUpcomingExpense(newCategory.guid);
-
-  console.log("category before", newCategory);
-
-  newCategory = calculateCategoryFields(
-    budget,
-    newCategory,
-    userData.payFrequency,
-    userData.nextPaydate,
-    true
-  );
-  console.log("category AFTER", newCategory);
-
-  return newCategory;
-};
-
-export const createCategory = (
-  budget: Budget,
-  categoryGroupsAll: CategoryGroup[],
-  groupID: string,
-  categoryID: string
-) => {
-  const budgetCategory = getBudgetCategory(
-    getBudgetMonth(budget.months, new Date()),
-    groupID,
-    categoryID
-  );
-
-  let guid = generateUUID().toUpperCase();
-  const cg = categoryGroupsAll.find(
-    (cg) => cg.groupID.toLowerCase() == groupID.toLowerCase()
-  );
-  if (cg) {
-    const cat = cg.categories.find(
-      (c) => c.categoryID.toLowerCase() == categoryID.toLowerCase()
-    );
-    if (cat) {
-      guid = cat.guid.toUpperCase();
-    }
-  }
-
-  const category: Category = {
-    guid,
-    categoryGroupID: groupID.toUpperCase(),
-    categoryID: categoryID.toUpperCase(),
-    groupName: budgetCategory.categoryGroupName,
-    name: budgetCategory.name,
-    amount: 0,
-    extraAmount: 0,
-    adjustedAmount: 0,
-    adjustedAmountPlusExtra: 0,
-    regularExpenseDetails: null,
-    upcomingDetails: null,
-    monthsAhead: 0,
-    postingMonths: [],
-  };
-
-  return category;
-};
-
-export const calculateCategoryFields = (
-  budget: Budget,
-  category: Category,
-  payFrequency: PayFrequency,
-  nextPaydate: string,
-  recalculateAdjusted: boolean
-) => {
-  log("categoryIn", category);
-  const newCategory = { ...category };
-
-  if (recalculateAdjusted) {
-    log("Recalculating adjusted amount");
-    const newAdjustedAmount = calculateAdjustedAmount(
-      newCategory,
-      budget.months,
-      true
-    );
-    log("new adjusted amount", newAdjustedAmount);
-    newCategory.adjustedAmount = newAdjustedAmount;
-  }
-
-  newCategory.adjustedAmountPlusExtra =
-    newCategory.adjustedAmount + newCategory.extraAmount;
-
-  if (isUpcomingExpense(newCategory)) {
-    // Calculate Upcoming Expense Details in here
-  }
-
-  const newMonthsAhead = calculateMonthsAhead(
-    newCategory,
-    budget.months,
-    payFrequency,
-    nextPaydate
-  );
-  newCategory.monthsAhead = newMonthsAhead;
-
-  const newPostingMonths = getPostingMonths(
-    newCategory,
-    budget.months,
-    payFrequency,
-    nextPaydate
-  );
-  newCategory.postingMonths = newPostingMonths;
-
-  // log("newCategoryOut", newCategory);
-  return newCategory;
-};
-
-export const updateCategoryAmount = (
-  budget: Budget,
-  category: Category,
-  payFrequency: PayFrequency,
-  nextPaydate: string,
-  key: "amount" | "extraAmount",
-  newAmount: number
-) => {
-  if (newAmount <= 0) newAmount = 0;
-  let newCategory = { ...category, [key]: newAmount };
-
-  newCategory = calculateCategoryFields(
-    budget,
-    newCategory,
-    payFrequency,
-    nextPaydate,
-    key == "amount"
-  );
-
-  return newCategory;
-};
-
-export const updateCategoryExpenseDetails = (
-  budget: Budget,
-  category: Category,
-  payFrequency: PayFrequency,
-  nextPaydate: string,
-  key:
-    | "nextDueDate"
-    | "isMonthly"
-    | "repeatFreqNum"
-    | "repeatFreqType"
-    | "includeOnChart"
-    | "multipleTransactions",
-  value: any
-) => {
-  log("updating expense details for key = " + key, value, category);
-
-  let newCategory = {
-    ...category,
-    regularExpenseDetails: {
-      ...category.regularExpenseDetails,
-      [key]: value,
-    } as RegularExpenses | null,
-  };
-
-  const regExpenses = newCategory.regularExpenseDetails as RegularExpenses;
-  if (key == "isMonthly" && value) {
-    regExpenses.repeatFreqNum = 1;
-    regExpenses.repeatFreqType = "Months";
-    regExpenses.monthsDivisor = 1;
-  }
-
-  if (key == "nextDueDate") {
-    const bmCat = getBudgetCategory(
-      getBudgetMonth(
-        budget.months,
-        parseISO(regExpenses.nextDueDate as string)
-      ),
-      newCategory.categoryGroupID,
-      newCategory.categoryID
-    );
-    // console.log("========BM CAT==========");
-    // console.log(bmCat);
-    if (bmCat.available >= newCategory.amount || bmCat.activity < 0) {
-      regExpenses.monthsDivisor = getNumberOfMonthsByFrequency(regExpenses);
-    } else {
-      regExpenses.monthsDivisor =
-        differenceInMonths(
-          startOfMonth(parseISO(value)),
-          startOfMonth(startOfToday())
-        ) + 1;
-    }
-  }
-
-  console.log("newCategory", newCategory);
-
-  newCategory = calculateCategoryFields(
-    budget,
-    newCategory,
-    payFrequency,
-    nextPaydate,
-    true
-  );
-  console.log("newCategoryCalc", newCategory);
-
-  return newCategory;
-};
-
-export const getGroupAmounts = (
-  categories: Category[],
-  includeOnChartAdded: boolean
-) => {
-  return categories.reduce(
-    (prev, curr) => {
-      if (
-        !includeOnChartAdded &&
-        curr.regularExpenseDetails != null &&
-        !curr.regularExpenseDetails.includeOnChart
-      ) {
-        return prev;
-      }
-
-      return {
-        amount: prev.amount + curr.amount,
-        extraAmount: prev.extraAmount + curr.extraAmount,
-        adjustedAmount: prev.adjustedAmount + curr.adjustedAmount,
-        adjustedAmountPlusExtra:
-          prev.adjustedAmountPlusExtra + curr.adjustedAmountPlusExtra,
-      };
-    },
-    {
-      amount: 0,
-      extraAmount: 0,
-      adjustedAmount: 0,
-      adjustedAmountPlusExtra: 0,
-    }
-  );
-};
-
 const formatCategories = (
   categoryGroups: CategoryGroup[],
   excludedCategories: ExcludedCategory[]
@@ -549,55 +143,107 @@ const formatCategories = (
   return formattedResults;
 };
 
-export const updateCategoryData =
-  (
-    userID: string,
-    budgetID: string,
-    newCategories: CategoryGroup[],
-    excludedCategories: ExcludedCategory[]
-  ) =>
-  async () => {
-    const formattedCategories = formatCategories(
-      newCategories,
-      excludedCategories
-    );
-    // log("formatted categories", formattedCategories);
-    // log("formatted categories", JSON.stringify(formattedCategories));
+export const updateCategoryData = async ({
+  userID,
+  budgetID,
+  newCategories,
+  excludedCategories,
+}: {
+  userID: string;
+  budgetID: string;
+  newCategories: CategoryGroup[];
+  excludedCategories: ExcludedCategory[];
+}) => {
+  log("are these categories new?", newCategories);
+  const formattedCategories = formatCategories(
+    newCategories,
+    excludedCategories
+  );
+  log("formatted categories", formattedCategories);
+  // log("formatted categories", JSON.stringify(formattedCategories));
 
-    const { data, error, headers } = await getAPIResponse({
-      method: "PUT",
-      url: "/user/categoryData",
-      params: {
-        UserID: userID,
-        BudgetID: budgetID,
-        Details: JSON.stringify(formattedCategories),
-      },
-    });
+  const { data, error, headers } = await getAPIResponse({
+    method: "PUT",
+    url: "/user/categoryData",
+    params: {
+      UserID: userID,
+      BudgetID: budgetID,
+      Details: JSON.stringify(formattedCategories),
+    },
+  });
 
-    if (error) throw new Error(error);
-    return data;
-  };
+  log("error & data", { error, data });
+  if (error) return Promise.reject(error);
+  return { newCategories, excludedCategories };
+};
 
 /////////////////////////////////////////
 ////////// CATEGORY FUNCTIONS ///////////
 /////////////////////////////////////////
-export const isRegularExpense = (category: Category) => {
-  return category.regularExpenseDetails != null;
-};
-export const isUpcomingExpense = (category: Category) => {
-  return category.upcomingDetails != null;
+
+const getNumberOfMonthsByFrequency = (
+  regularExpenseDetails: RegularExpenses | undefined
+): number => {
+  if (!regularExpenseDetails) return 1;
+  return (
+    regularExpenseDetails.repeatFreqNum *
+    (regularExpenseDetails.repeatFreqType == "Months" ? 1 : 12)
+  );
 };
 
-export const getPercentIncomeGroup = (
-  monthlyIncome: number,
-  categoryGroup: CategoryGroup
+const getAmountByFrequency = (
+  amount: number,
+  regularExpenseDetails: RegularExpenses | null
 ) => {
-  if (monthlyIncome == 0) return 0;
-  return categoryGroup.adjustedAmountPlusExtra / monthlyIncome;
+  if (!regularExpenseDetails) return amount;
+
+  const numMonths = getNumberOfMonthsByFrequency(regularExpenseDetails);
+  return amount / numMonths;
 };
-export const getPercentIncome = (monthlyIncome: number, category: Category) => {
-  if (monthlyIncome == 0) return 0;
-  return category.adjustedAmountPlusExtra / monthlyIncome;
+
+const calculateMonthsAhead = (
+  category: Category,
+  months: BudgetMonth[],
+  payFreq: PayFrequency,
+  nextPaydate: string
+): number => {
+  if (category.adjustedAmountPlusExtra == 0) return 0;
+
+  let monthsAhead = 0;
+  let postingMonths = getPostingMonths(
+    category,
+    months,
+    payFreq,
+    nextPaydate,
+    25
+  );
+
+  // We don't consider the current month when referencing our "months ahead"
+  // number, so remove the current month if it's there
+  if (isEqual(parseISO(postingMonths[0].month), startOfMonth(new Date()))) {
+    postingMonths.shift();
+  }
+
+  // Loop through each posting month and determine if we've already budgeted
+  // the expected amount in our actual budget. If so, increment the monthsAhead
+  // value and continue to the next month until either all months are exhausted,
+  // or we find a month where we haven't budgeted enough yet
+  for (let i = 0; i < postingMonths.length; i++) {
+    const currPM = postingMonths[i];
+    // log("calculating months ahead");
+    const bm = getBudgetMonth(months, parseISO(currPM.month));
+    const bc = getBudgetCategory(
+      bm,
+      category.categoryGroupID,
+      category.categoryID
+    );
+
+    if (bc.budgeted < currPM.amount) break;
+
+    monthsAhead += 1;
+  }
+
+  return monthsAhead;
 };
 
 const calculateAdjustedAmount = (
@@ -681,26 +327,6 @@ const calculateAdjustedAmount = (
   } else {
     return catAmtByFreq;
   }
-};
-
-const getNumberOfMonthsByFrequency = (
-  regularExpenseDetails: RegularExpenses | undefined
-): number => {
-  if (!regularExpenseDetails) return 1;
-  return (
-    regularExpenseDetails.repeatFreqNum *
-    (regularExpenseDetails.repeatFreqType == "Months" ? 1 : 12)
-  );
-};
-
-const getAmountByFrequency = (
-  amount: number,
-  regularExpenseDetails: RegularExpenses | null
-) => {
-  if (!regularExpenseDetails) return amount;
-
-  const numMonths = getNumberOfMonthsByFrequency(regularExpenseDetails);
-  return amount / numMonths;
 };
 
 const getPostingMonths = (
@@ -803,49 +429,441 @@ const getPostingMonths = (
   return postingMonths;
 };
 
-const calculateMonthsAhead = (
-  category: Category,
-  months: BudgetMonth[],
-  payFreq: PayFrequency,
+const createRegularExpense = (
+  guid: string,
   nextPaydate: string
-): number => {
-  if (category.adjustedAmountPlusExtra == 0) return 0;
+): RegularExpenses => {
+  return {
+    guid: guid,
+    isMonthly: true,
+    nextDueDate: nextPaydate,
+    monthsDivisor: 1,
+    repeatFreqNum: 1,
+    repeatFreqType: "Months",
+    includeOnChart: true,
+    multipleTransactions: false,
+  };
+};
 
-  let monthsAhead = 0;
-  let postingMonths = getPostingMonths(
-    category,
-    months,
-    payFreq,
-    nextPaydate,
-    25
+const createUpcomingExpense = (guid: string): UpcomingExpenses => {
+  return {
+    guid,
+    expenseAmount: 0,
+  };
+};
+
+const calculateCategoryFields = (
+  budget: Budget,
+  category: Category,
+  payFrequency: PayFrequency,
+  nextPaydate: string,
+  recalculateAdjusted: boolean
+) => {
+  log("categoryIn", category);
+  const newCategory = { ...category };
+
+  if (recalculateAdjusted) {
+    log("Recalculating adjusted amount");
+    const newAdjustedAmount = calculateAdjustedAmount(
+      newCategory,
+      budget.months,
+      true
+    );
+    log("new adjusted amount", newAdjustedAmount);
+    newCategory.adjustedAmount = newAdjustedAmount;
+  }
+
+  newCategory.adjustedAmountPlusExtra =
+    newCategory.adjustedAmount + newCategory.extraAmount;
+
+  const newMonthsAhead = calculateMonthsAhead(
+    newCategory,
+    budget.months,
+    payFrequency,
+    nextPaydate
+  );
+  newCategory.monthsAhead = newMonthsAhead;
+
+  const newPostingMonths = getPostingMonths(
+    newCategory,
+    budget.months,
+    payFrequency,
+    nextPaydate
+  );
+  newCategory.postingMonths = newPostingMonths;
+
+  // log("newCategoryOut", newCategory);
+  return newCategory;
+};
+
+export const createCategory = (
+  budget: Budget,
+  categoryGroupsAll: CategoryGroup[],
+  groupID: string,
+  categoryID: string
+) => {
+  const budgetCategory = getBudgetCategory(
+    getBudgetMonth(budget.months, new Date()),
+    groupID,
+    categoryID
   );
 
-  // We don't consider the current month when referencing our "months ahead"
-  // number, so remove the current month if it's there
-  if (isEqual(parseISO(postingMonths[0].month), startOfMonth(new Date()))) {
-    postingMonths.shift();
-  }
-
-  // Loop through each posting month and determine if we've already budgeted
-  // the expected amount in our actual budget. If so, increment the monthsAhead
-  // value and continue to the next month until either all months are exhausted,
-  // or we find a month where we haven't budgeted enough yet
-  for (let i = 0; i < postingMonths.length; i++) {
-    const currPM = postingMonths[i];
-    // log("calculating months ahead");
-    const bm = getBudgetMonth(months, parseISO(currPM.month));
-    const bc = getBudgetCategory(
-      bm,
-      category.categoryGroupID,
-      category.categoryID
+  let guid = generateUUID().toUpperCase();
+  const cg = categoryGroupsAll.find(
+    (cg) => cg.groupID.toLowerCase() == groupID.toLowerCase()
+  );
+  if (cg) {
+    const cat = cg.categories.find(
+      (c) => c.categoryID.toLowerCase() == categoryID.toLowerCase()
     );
-
-    if (bc.budgeted < currPM.amount) break;
-
-    monthsAhead += 1;
+    if (cat) {
+      guid = cat.guid.toUpperCase();
+    }
   }
 
-  return monthsAhead;
+  const category: Category = {
+    guid,
+    categoryGroupID: groupID.toUpperCase(),
+    categoryID: categoryID.toUpperCase(),
+    groupName: budgetCategory.categoryGroupName,
+    name: budgetCategory.name,
+    amount: 0,
+    extraAmount: 0,
+    adjustedAmount: 0,
+    adjustedAmountPlusExtra: 0,
+    regularExpenseDetails: null,
+    upcomingDetails: null,
+    monthsAhead: 0,
+    postingMonths: [],
+  };
+
+  return category;
+};
+
+export const updateCategoryAmount = (
+  budget: Budget,
+  category: Category,
+  payFrequency: PayFrequency,
+  nextPaydate: string,
+  key: "amount" | "extraAmount",
+  newAmount: number
+) => {
+  if (newAmount <= 0) newAmount = 0;
+  let newCategory = { ...category, [key]: newAmount };
+
+  newCategory = calculateCategoryFields(
+    budget,
+    newCategory,
+    payFrequency,
+    nextPaydate,
+    key == "amount"
+  );
+
+  return newCategory;
+};
+
+export const updateCategoryExpenseDetails = (
+  budget: Budget,
+  category: Category,
+  payFrequency: PayFrequency,
+  nextPaydate: string,
+  key:
+    | "nextDueDate"
+    | "isMonthly"
+    | "repeatFreqNum"
+    | "repeatFreqType"
+    | "includeOnChart"
+    | "multipleTransactions",
+  value: any
+) => {
+  log("updating expense details for key = " + key, value, category);
+
+  let newCategory = {
+    ...category,
+    regularExpenseDetails: {
+      ...category.regularExpenseDetails,
+      [key]: value,
+    } as RegularExpenses | null,
+  };
+
+  const regExpenses = newCategory.regularExpenseDetails as RegularExpenses;
+  if (key == "isMonthly" && value) {
+    regExpenses.repeatFreqNum = 1;
+    regExpenses.repeatFreqType = "Months";
+    regExpenses.monthsDivisor = 1;
+  }
+
+  if (key == "nextDueDate") {
+    const bmCat = getBudgetCategory(
+      getBudgetMonth(
+        budget.months,
+        parseISO(regExpenses.nextDueDate as string)
+      ),
+      newCategory.categoryGroupID,
+      newCategory.categoryID
+    );
+    // console.log("========BM CAT==========");
+    // console.log(bmCat);
+    if (bmCat.available >= newCategory.amount || bmCat.activity < 0) {
+      regExpenses.monthsDivisor = getNumberOfMonthsByFrequency(regExpenses);
+    } else {
+      regExpenses.monthsDivisor =
+        differenceInMonths(
+          startOfMonth(parseISO(value)),
+          startOfMonth(startOfToday())
+        ) + 1;
+    }
+  }
+
+  console.log("newCategory", newCategory);
+
+  newCategory = calculateCategoryFields(
+    budget,
+    newCategory,
+    payFrequency,
+    nextPaydate,
+    true
+  );
+  console.log("newCategoryCalc", newCategory);
+
+  return newCategory;
+};
+
+export const updateCategoryUpcomingAmount = (
+  budget: Budget,
+  category: Category,
+  payFrequency: PayFrequency,
+  nextPaydate: string,
+  newAmount: number
+) => {
+  let newCategory = {
+    ...category,
+    upcomingDetails: {
+      ...category.upcomingDetails,
+      expenseAmount: newAmount,
+    } as UpcomingExpenses | null,
+  };
+
+  newCategory = calculateCategoryFields(
+    budget,
+    newCategory,
+    payFrequency,
+    nextPaydate,
+    true
+  );
+
+  return newCategory;
+};
+
+export const toggleCategoryOptions = (
+  userData: UserData,
+  budget: Budget,
+  category: Category,
+  checked: boolean,
+  option: string
+) => {
+  let newCategory = { ...category };
+
+  const isRegularExpense = option == "Regular Expense" ? checked : false;
+  const isUpcomingExpense = option == "Upcoming Expense" ? checked : false;
+
+  newCategory.regularExpenseDetails = !isRegularExpense
+    ? null
+    : createRegularExpense(newCategory.guid, userData.nextPaydate);
+
+  newCategory.upcomingDetails = !isUpcomingExpense
+    ? null
+    : createUpcomingExpense(newCategory.guid);
+
+  console.log("category before", newCategory);
+
+  newCategory = calculateCategoryFields(
+    budget,
+    newCategory,
+    userData.payFrequency,
+    userData.nextPaydate,
+    true
+  );
+  console.log("category AFTER", newCategory);
+
+  return newCategory;
+};
+
+/** Returns a filtered CategoryGroup[] excluding any categories that have been excluded by the user */
+export const getIncludedCategoryGroups = (
+  categoryGroups: CategoryGroup[],
+  excludedCategories: ExcludedCategory[]
+) => {
+  return categoryGroups.reduce((prev, curr) => {
+    const excCatsThisGroup = excludedCategories.filter(
+      (e) => e.categoryGroupID == curr.groupID
+    );
+    if (curr.categories.length == excCatsThisGroup.length) return prev;
+    if (excCatsThisGroup.length == 0) return [...prev, curr];
+
+    const newCategories = curr.categories.reduce((prev2, curr2) => {
+      if (excCatsThisGroup.some((e) => e.guid == curr2.guid)) {
+        return prev2;
+      }
+      return [...prev2, curr2];
+    }, [] as Category[]);
+
+    return [
+      ...prev,
+      {
+        ...curr,
+        categories: newCategories,
+      },
+    ];
+  }, [] as CategoryGroup[]);
+};
+
+/** Returns a filtered CategoryGroup[] which only includes group that have categories with at least
+ *  some amount entered by the user */
+export const getCategoryGroupsWithAmounts = (
+  categoryGroups: CategoryGroup[]
+) => {
+  return categoryGroups.filter((grp) => grp.adjustedAmountPlusExtra > 0);
+};
+
+export const getAllCategories = (
+  categoryGroups: CategoryGroup[],
+  includeOnChartAdded: boolean
+) => {
+  return categoryGroups.reduce((prev, curr) => {
+    if (!includeOnChartAdded) {
+      return [
+        ...prev,
+        ...curr.categories.filter(
+          (c) =>
+            c.regularExpenseDetails == null ||
+            c.regularExpenseDetails.includeOnChart
+        ),
+      ];
+    }
+    return [...prev, ...curr.categories];
+  }, [] as Category[]);
+};
+
+export const getTotalAmountUsed = (
+  categoryGroups: CategoryGroup[],
+  includeOnChartAdded: boolean
+) => {
+  return sum(
+    getAllCategories(categoryGroups, includeOnChartAdded),
+    "adjustedAmountPlusExtra"
+  );
+};
+
+export const getGroupAmounts = (
+  categories: Category[],
+  includeOnChartAdded: boolean
+) => {
+  return categories.reduce(
+    (prev, curr) => {
+      if (
+        !includeOnChartAdded &&
+        curr.regularExpenseDetails != null &&
+        !curr.regularExpenseDetails.includeOnChart
+      ) {
+        return prev;
+      }
+
+      return {
+        amount: prev.amount + curr.amount,
+        extraAmount: prev.extraAmount + curr.extraAmount,
+        adjustedAmount: prev.adjustedAmount + curr.adjustedAmount,
+        adjustedAmountPlusExtra:
+          prev.adjustedAmountPlusExtra + curr.adjustedAmountPlusExtra,
+      };
+    },
+    {
+      amount: 0,
+      extraAmount: 0,
+      adjustedAmount: 0,
+      adjustedAmountPlusExtra: 0,
+    }
+  );
+};
+
+export const getPercentIncome = (
+  monthlyIncome: number,
+  categoryGroup: CategoryGroup | Category
+) => {
+  if (monthlyIncome == 0) return 0;
+  return categoryGroup.adjustedAmountPlusExtra / monthlyIncome;
+};
+
+export const isRegularExpense = (category: Category) => {
+  return category.regularExpenseDetails != null;
+};
+
+export const isUpcomingExpense = (category: Category) => {
+  return category.upcomingDetails != null;
+};
+
+export const calculateUpcomingExpense = (
+  budget: Budget,
+  category: Category,
+  payFrequency: PayFrequency,
+  nextPaydate: string
+): UpcomingExpenseDetails | null => {
+  if (!isUpcomingExpense(category)) return null;
+  const totalAmt = category.upcomingDetails?.expenseAmount || 0;
+  const bc = getBudgetCategory(
+    getBudgetMonth(budget.months, new Date()),
+    category.categoryGroupID,
+    category.categoryID
+  );
+  const availableAmt = bc.available;
+
+  if (availableAmt >= totalAmt) {
+    return {
+      guid: category.guid,
+      categoryName: category.name,
+      purchaseDate: new Date().toISOString(),
+      daysAway: 0,
+      paychecksAway: 0,
+      amountSaved: availableAmt,
+      totalAmount: totalAmt,
+    };
+  }
+
+  const neededToSave = totalAmt - availableAmt;
+  const amtSavedPerPaycheck = getAmountByPayFrequency(
+    category.adjustedAmountPlusExtra,
+    payFrequency
+  );
+
+  // log("  ", { neededToSave, amtSavedPerPaycheck, availableAmt });
+
+  const numPaychecks = Math.ceil(neededToSave / amtSavedPerPaycheck) - 1;
+  const dtCurrPaydate = parseISO(nextPaydate);
+
+  // log("  ", { numPaychecks, dtCurrPaydate });
+  let dtUpcomingPaydate = new Date();
+  if (payFrequency == "Weekly") {
+    dtUpcomingPaydate = addWeeks(dtCurrPaydate, numPaychecks);
+  } else if (payFrequency == "Every 2 Weeks") {
+    dtUpcomingPaydate = addWeeks(dtCurrPaydate, numPaychecks * 2);
+  } else if (payFrequency == "Monthly") {
+    dtUpcomingPaydate = addMonths(dtCurrPaydate, numPaychecks);
+  }
+
+  // log("  ", { dtUpcomingPaydate });
+
+  const daysAway = differenceInDays(dtUpcomingPaydate, new Date());
+
+  // log("  ", { daysAway });
+  return {
+    guid: category.guid,
+    categoryName: category.name,
+    purchaseDate: dtUpcomingPaydate.toISOString(),
+    daysAway: daysAway,
+    paychecksAway: numPaychecks,
+    amountSaved: availableAmt,
+    totalAmount: totalAmt,
+  };
 };
 
 export const dueDateAndAmountSet = (

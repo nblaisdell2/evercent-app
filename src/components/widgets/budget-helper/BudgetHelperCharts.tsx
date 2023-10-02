@@ -9,8 +9,8 @@ import {
   CategoryGroup,
   getAllCategories,
   getGroupAmounts,
+  getTotalAmountUsed,
 } from "../../../model/category";
-import { getTotalAmountUsed } from "../../../model/userData";
 import { log } from "console";
 
 const CHART_COLORS = [
@@ -186,7 +186,7 @@ function BudgetHelperCharts({
       );
     }
 
-    let remainder = monthlyIncome - getTotalAmountUsed(categoryList);
+    let remainder = monthlyIncome - getTotalAmountUsed(categoryList, false);
     if (other == "pie") {
       myChartData.push(["Unused", remainder]);
     } else {

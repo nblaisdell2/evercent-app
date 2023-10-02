@@ -125,8 +125,8 @@ function AllCategoriesEditable({
   // const [excluded, setExcluded] = useState<string[]>([]);
   // const hierarchyTableProps = useHierarchyTable(budgetCategories, createList);
   const hierarchyProps = useHierarchyTable(
-    "AllCategoriesEditable",
-    createList(getBudgetCategories(budget))
+    getBudgetCategories(budget),
+    createList
   );
 
   // log("excluded list", excluded);

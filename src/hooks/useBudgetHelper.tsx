@@ -7,13 +7,11 @@ import {
   getGroupAmounts,
   toggleCategoryOptions,
   updateCategoryAmount,
-  updateCategoryData,
   updateCategoryExpenseDetails,
+  updateCategoryUpcomingAmount,
 } from "../model/category";
 import { CheckboxItem } from "../components/elements/HierarchyTable";
-import useHierarchyTable from "./useHierarchyTable";
-import { useSQLMutation } from "./useSQLMutation";
-import { EvercentData } from "../model/evercent";
+import useHierarchyTable, { HierarchyTableState } from "./useHierarchyTable";
 import { log } from "../utils/log";
 import { find } from "../utils/util";
 import { Budget, BudgetMonth, getBudgetMonth } from "../model/budget";
@@ -22,12 +20,12 @@ import { WidgetProps } from "../components/MainContent";
 import useEvercent from "./useEvercent";
 
 export type BudgetHelperState = {
+  monthlyIncome: number;
+  nextPaydate: string;
+  changesMade: boolean;
   categoryList: CategoryGroup[];
   selectedCategory: Category | undefined;
-  categoryListData: CheckboxItem[];
-  expandedItems: CheckboxItem[];
-  setCategoryListData: Dispatch<SetStateAction<CheckboxItem[]>>;
-  setExpandedItems: Dispatch<SetStateAction<CheckboxItem[]>>;
+  hierarchyProps: HierarchyTableState;
   setSelectedCategory: Dispatch<SetStateAction<Category | undefined>>;
 
   updateSelectedCategoryAmount: (
@@ -67,6 +65,7 @@ function useBudgetHelper(widgetProps: WidgetProps | undefined) {
     categoryGroups,
     categoryGroupsAll,
     excludedCategories,
+    updateCategories,
   } = useEvercent();
 
   const [categoryList, setCategoryList] = useState<CategoryGroup[]>([
@@ -77,33 +76,6 @@ function useBudgetHelper(widgetProps: WidgetProps | undefined) {
   ]);
 
   const [selectedCategory, setSelectedCategory] = useState<Category>();
-
-  const {
-    mutate: updateCategories,
-    data: newCategoryData,
-    error,
-    mutError,
-  } = useSQLMutation<EvercentData, any>(
-    ["update-categories"],
-    updateCategoryData(
-      userData?.userID as string,
-      userData?.budgetID as string,
-      categoryList as CategoryGroup[],
-      excludedList as ExcludedCategory[]
-    ),
-    ["get-all-evercent-data"],
-    false,
-    (old: EvercentData | undefined) => {
-      if (old && categoryList && excludedList) {
-        log("updating cache", { categoryList, excludedList });
-        return {
-          ...old,
-          categoryGroups: categoryList,
-          excludedCategories: excludedList,
-        };
-      }
-    }
-  );
 
   const updateSelectedCategoryAmount = (
     category: Category,
@@ -163,13 +135,13 @@ function useBudgetHelper(widgetProps: WidgetProps | undefined) {
     newAmount: number
   ) => {
     if (category.upcomingDetails) {
-      const newCategory = {
-        ...category,
-        upcomingDetails: {
-          ...category.upcomingDetails,
-          expenseAmount: newAmount,
-        },
-      };
+      const newCategory = updateCategoryUpcomingAmount(
+        budget as Budget,
+        category,
+        userData?.payFrequency as PayFrequency,
+        userData?.nextPaydate as string,
+        newAmount
+      );
       updateSelectedCategory(newCategory);
     }
   };
@@ -211,8 +183,8 @@ function useBudgetHelper(widgetProps: WidgetProps | undefined) {
   };
 
   const updateChangesMade = (newVal: boolean) => {
-    if (widgetProps?.setWidgetMadeChanges) {
-      widgetProps.setWidgetMadeChanges(newVal);
+    if (widgetProps?.setChangesMade) {
+      widgetProps.setChangesMade(newVal);
     }
   };
 
@@ -286,24 +258,83 @@ function useBudgetHelper(widgetProps: WidgetProps | undefined) {
 
   const saveCategories = () => {
     // save the category list results to the database
-    updateCategories();
+    updateCategories({
+      userID: userData?.userID as string,
+      budgetID: userData?.budgetID as string,
+      newCategories: categoryList as CategoryGroup[],
+      excludedCategories: excludedList as ExcludedCategory[],
+    });
 
     updateSelectedCategory(undefined);
     updateChangesMade(false);
   };
 
-  useEffect(() => {
-    updateChangesMade(false);
+  const createList = (
+    data: CategoryGroup[],
+    expandedItems?: CheckboxItem[]
+  ) => {
+    // log("Creating collapsible category list", {
+    //   data,
+    //   expandedItems,
+    // });
+    if (!data) return [];
 
+    let itemList: CheckboxItem[] = [];
+    let currItemGroup: CategoryGroup;
+    let currItemCat;
+    for (let i = 0; i < data.length; i++) {
+      currItemGroup = data[i];
+      if (currItemGroup.categories.length > 0) {
+        const isExpanded =
+          expandedItems &&
+          expandedItems.length > 0 &&
+          expandedItems.some(
+            (e) =>
+              e.expanded &&
+              e.id.toLowerCase() == currItemGroup.groupID.toLowerCase()
+          );
+        itemList.push({
+          parentId: "",
+          id: currItemGroup.groupID,
+          name: currItemGroup.groupName,
+          expanded: isExpanded,
+        });
+
+        for (let j = 0; j < currItemGroup.categories.length; j++) {
+          currItemCat = currItemGroup.categories[j];
+
+          itemList.push({
+            parentId: currItemGroup.groupID,
+            id: currItemCat.categoryID,
+            name: currItemCat.name,
+          });
+        }
+      }
+    }
+
+    // log("item list", itemList);
+    return itemList;
+  };
+
+  const hierarchyProps = useHierarchyTable(categoryList, createList);
+
+  useEffect(() => {
+    hierarchyProps.setListData(
+      createList(categoryList, hierarchyProps.expandedItems)
+    );
     if (widgetProps) {
       widgetProps.setOnSaveFn(() => saveCategories);
     }
-  }, []);
+  }, [categoryList]);
 
   // if (error) log("mutation error", mutError);
 
   return {
+    monthlyIncome: userData?.monthlyIncome || 0,
+    nextPaydate: userData?.nextPaydate || new Date().toISOString(),
+    changesMade: widgetProps?.changesMade || false,
     categoryList,
+    hierarchyProps,
     selectedCategory,
     setSelectedCategory,
 
