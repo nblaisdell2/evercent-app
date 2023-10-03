@@ -7,13 +7,17 @@ import LabelAndValue from "../elements/LabelAndValue";
 import { log } from "../../utils/log";
 import WidgetLoader from "../other/WidgetLoader";
 import useEvercent from "../../hooks/useEvercent";
+import { ModalProps } from "../../hooks/useModal";
+import { sleep } from "../../utils/util";
 
 function BudgetsListModal({
   userID,
   budget,
+  modalProps,
 }: {
   userID: string;
   budget: Budget;
+  modalProps: ModalProps;
 }) {
   const { changeBudget, changeBudgetData } = useEvercent();
 
@@ -27,7 +31,21 @@ function BudgetsListModal({
     getBudgetsList(userID)
   );
 
+  const update = async () => {
+    if (newBudget?.name !== budget.name) {
+      modalProps.setModalIsSaving(true);
+
+      await changeBudget({ userID, newBudgetID: newBudget?.id });
+
+      modalProps.setModalIsSaving(false);
+
+      window.location.reload();
+    }
+  };
+
   useEffect(() => {
+    modalProps.setOnSaveFn(() => update);
+    log("did I get any changeBudgetData returned?", changeBudgetData);
     if (
       changeBudgetData &&
       changeBudgetData.status == "Budgets switched successfully!"
@@ -74,11 +92,7 @@ function BudgetsListModal({
       <MyButton
         disabled={newBudget?.name == budget.name}
         buttonText={"Switch Budget"}
-        onClick={async () => {
-          if (newBudget?.name !== budget.name) {
-            changeBudget({ userID, newBudgetID: newBudget?.id });
-          }
-        }}
+        onClick={update}
       />
     </div>
   );

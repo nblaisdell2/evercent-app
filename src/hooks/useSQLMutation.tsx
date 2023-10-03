@@ -1,11 +1,13 @@
 import { useEffect, useState } from "react";
 import {
   MutationFunction,
+  UseMutateAsyncFunction,
   UseMutateFunction,
   useMutation,
   useQueryClient,
 } from "@tanstack/react-query";
 import { Fn, FnType, Queries } from "./useEvercent";
+import { log } from "console";
 
 export function useSQLMutation<
   Q extends Queries,
@@ -24,14 +26,14 @@ export function useSQLMutation<
   errRollbackDelay?: number,
   errRollbackFn?: () => Promise<void>
 ): {
-  mutate: UseMutateFunction<TDataOutput, unknown, TVariables, unknown>;
+  mutate: UseMutateAsyncFunction<TDataOutput, unknown, TVariables, unknown>;
   error: boolean;
   data: TDataOutput | undefined;
   mutError: unknown;
 } {
   const queryClient = useQueryClient();
 
-  const { mutate, isError, error, data } = useMutation<
+  const { mutate, mutateAsync, isError, error, data, isLoading } = useMutation<
     TDataOutput,
     unknown,
     TVariables,
@@ -80,5 +82,10 @@ export function useSQLMutation<
     }
   }, [isError]);
 
-  return { mutate: mutate, error: foundError, data, mutError: error };
+  return {
+    mutate: mutateAsync,
+    error: foundError,
+    data,
+    mutError: error,
+  };
 }

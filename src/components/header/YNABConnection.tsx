@@ -26,7 +26,7 @@ export function YNABConnectButton({ userID }: { userID: string }) {
 
 function YNABConnection() {
   const { isLoading, userData, budget } = useEvercent();
-  const modalProps = useModal();
+  const modalProps = useModal("Loading New Budget Details...", "Reloading...");
 
   const openBudgetURL = (budgetID: string) => {
     return "https://app.ynab.com/" + budgetID.toLowerCase() + "/budget";
@@ -79,6 +79,7 @@ function YNABConnection() {
             <BudgetsListModal
               userID={userData?.userID as string}
               budget={budget}
+              modalProps={modalProps}
             />
           </ModalContent>
         </>

@@ -25,17 +25,6 @@ function CategoryList({ bhProps }: { bhProps: BudgetHelperState }) {
   const { budget } = useEvercent();
   const modalProps = useModal();
 
-  // const {
-  //   isOpen: isOpenSaving,
-  //   showModal: showModalSaving,
-  //   closeModal: closeModalSaving,
-  // } = useModal();
-
-  // const loadingProps = useSavingScreen(queryLoading, () => {
-  //   closeModalSaving();
-  //   closeModal();
-  // });
-
   const createGroupRow = (grp: CategoryGroup) => {
     return !grp ? (
       <></>
@@ -195,15 +184,6 @@ function CategoryList({ bhProps }: { bhProps: BudgetHelperState }) {
           closeModal={modalProps.closeModal}
         />
       </ModalContent>
-
-      {/* {isOpenSaving && (
-        <ModalContent
-          modalContentID={ModalType.SAVING}
-          onClose={closeModalSaving}
-        >
-          <SavingScreen loadingProps={loadingProps} />
-        </ModalContent>
-      )} */}
     </div>
   );
 }

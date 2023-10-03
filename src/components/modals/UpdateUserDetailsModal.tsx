@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import Label from "../elements/Label";
 import RadioButtonGroup from "../elements/RadioButtonGroup";
 import MyIcon from "../elements/MyIcon";
@@ -9,13 +9,17 @@ import { log } from "../../utils/log";
 import { startOfToday } from "date-fns";
 import { UserData } from "../../model/userData";
 import useEvercent from "../../hooks/useEvercent";
+import { ModalProps } from "../../hooks/useModal";
+import { sleep } from "../../utils/util";
 
 function UpdateUserDetailsModal({
   userData,
-  closeModal,
-}: {
+  modalProps,
+}: // modalPropsSaving,
+{
   userData: UserData;
-  closeModal: () => void;
+  modalProps: ModalProps;
+  // modalPropsSaving: ModalProps;
 }) {
   const { updateUserDetails } = useEvercent();
 
@@ -26,6 +30,23 @@ function UpdateUserDetailsModal({
     userData.payFrequency
   );
   const [newNextPaydate, setNewNextPaydate] = useState(userData.nextPaydate);
+
+  const update = async () => {
+    modalProps.setModalIsSaving(true);
+
+    await updateUserDetails({
+      userData,
+      monthlyIncome: newMonthlyIncome,
+      payFrequency: newPayFrequency,
+      nextPaydate: newNextPaydate,
+    });
+
+    modalProps.setModalIsSaving(false);
+  };
+
+  useEffect(() => {
+    modalProps.setOnSaveFn(() => update);
+  }, []);
 
   return (
     <div className="h-full flex flex-col">
@@ -70,15 +91,7 @@ function UpdateUserDetailsModal({
               className="h-6 w-6 text-green-600 stroke-2"
             />
           }
-          onClick={() => {
-            updateUserDetails({
-              userData,
-              monthlyIncome: newMonthlyIncome,
-              payFrequency: newPayFrequency,
-              nextPaydate: newNextPaydate,
-            });
-            closeModal();
-          }}
+          onClick={update}
         />
       </div>
     </div>

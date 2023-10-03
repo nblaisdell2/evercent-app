@@ -4,16 +4,23 @@ export type ModalProps = {
   isOpen: boolean;
   showModal: () => void;
   closeModal: () => void;
+  modalIsSaving: boolean;
+  setModalIsSaving: Dispatch<SetStateAction<boolean>>;
   changesMade: boolean;
   setChangesMade: Dispatch<SetStateAction<boolean>>;
-  onSaveFn: (() => void) | undefined;
+  onSaveFn: (() => Promise<void>) | undefined;
   setOnSaveFn: Dispatch<SetStateAction<(() => void) | undefined>>;
+  loadingText: string;
+  savedText: string;
 };
 
-function useModal() {
+function useModal(loadingText?: string, savedText?: string) {
   const [isOpen, setIsOpen] = useState(false);
   const [changesMade, setChangesMade] = useState(false);
-  const [onSaveFn, setOnSaveFn] = useState<(() => void) | undefined>(undefined);
+  const [modalIsSaving, setModalIsSaving] = useState(false);
+  const [onSaveFn, setOnSaveFn] = useState<(() => Promise<void>) | undefined>(
+    undefined
+  );
 
   const showModal = () => {
     setIsOpen(true);
@@ -31,6 +38,10 @@ function useModal() {
     setChangesMade,
     onSaveFn,
     setOnSaveFn,
+    modalIsSaving,
+    setModalIsSaving,
+    loadingText: loadingText || "Saving...",
+    savedText: savedText || "Saved!",
   } as ModalProps;
 }
 

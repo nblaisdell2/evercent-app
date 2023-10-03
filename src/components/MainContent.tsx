@@ -18,7 +18,7 @@ import UpcomingExpensesWidget from "./widgets/upcoming-expenses/UpcomingExpenses
 
 export type WidgetProps = Pick<
   ModalProps,
-  "changesMade" | "setChangesMade" | "setOnSaveFn"
+  "changesMade" | "setChangesMade" | "setOnSaveFn" | "setModalIsSaving"
 >;
 
 function Widget({
@@ -55,6 +55,7 @@ function Widget({
                 changesMade: modalProps.changesMade,
                 setChangesMade: modalProps.setChangesMade,
                 setOnSaveFn: modalProps.setOnSaveFn,
+                setModalIsSaving: modalProps.setModalIsSaving,
               } as WidgetProps,
             })
           : fullComponent}

@@ -55,7 +55,6 @@ export type BudgetHelperState = {
   ) => void;
   saveCategories: () => void;
   updateExcludedCategories: (itemsToUpdate: CheckboxItem[]) => void;
-  // discardChanges: () => void;
 };
 
 function useBudgetHelper(widgetProps: WidgetProps | undefined) {
@@ -256,14 +255,22 @@ function useBudgetHelper(widgetProps: WidgetProps | undefined) {
     updateChangesMade(true);
   };
 
-  const saveCategories = () => {
+  const saveCategories = async () => {
+    if (widgetProps?.setModalIsSaving) {
+      widgetProps.setModalIsSaving(true);
+    }
+
     // save the category list results to the database
-    updateCategories({
+    await updateCategories({
       userID: userData?.userID as string,
       budgetID: userData?.budgetID as string,
       newCategories: categoryList as CategoryGroup[],
       excludedCategories: excludedList as ExcludedCategory[],
     });
+
+    if (widgetProps?.setModalIsSaving) {
+      widgetProps.setModalIsSaving(false);
+    }
 
     updateSelectedCategory(undefined);
     updateChangesMade(false);

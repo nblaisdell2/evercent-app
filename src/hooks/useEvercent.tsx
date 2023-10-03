@@ -16,6 +16,7 @@ import {
   switchBudget,
   updateBudgetCategoryAmount,
 } from "../model/budget";
+import { useState } from "react";
 
 export type Queries =
   | "get-all-evercent-data"
@@ -61,6 +62,8 @@ export type FnType<T> = T extends (...args: any) => any
 //     queryKey: [Q];
 //     fnData: FnInfo<F>;
 //   };
+
+export type QueryLoadingState = null | "" | "loading" | "saved";
 
 function useEvercent() {
   const { user } = useAuth0();

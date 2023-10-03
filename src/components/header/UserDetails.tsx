@@ -121,10 +121,11 @@ function UserDetails() {
         fullScreen={false}
         modalTitle={"User Details"}
         modalProps={modalProps}
+        closeOnSave={true}
       >
         <UpdateUserDetailsModal
           userData={userData as UserData}
-          closeModal={modalProps.closeModal}
+          modalProps={modalProps}
         />
       </ModalContent>
     </>

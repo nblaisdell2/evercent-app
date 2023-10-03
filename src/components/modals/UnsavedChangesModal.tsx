@@ -10,7 +10,7 @@ import MyButton from "../elements/MyButton";
 function UnsavedChangesModal({
   onExit,
 }: {
-  onExit: (exitType: "back" | "discard" | "save") => void;
+  onExit: (exitType: "back" | "discard" | "save") => Promise<void>;
 }) {
   return (
     <div className="h-full flex flex-col items-center justify-around ">
@@ -28,19 +28,19 @@ function UnsavedChangesModal({
           icon={
             <ArrowLeftIcon className="h-10 w-10 text-black stroke-2 mr-2" />
           }
-          onClick={() => onExit("back")}
+          onClick={async () => await onExit("back")}
           className=""
         />
         <MyButton
           buttonText={"Discard Changes and Exit"}
           icon={<XMarkIcon className="h-10 w-10 text-red-600 stroke-2" />}
-          onClick={() => onExit("discard")}
+          onClick={async () => await onExit("discard")}
           className=""
         />
         <MyButton
           buttonText={"Save Changes and Exit"}
           icon={<CheckIcon className="h-10 w-10 text-green-600 stroke-2" />}
-          onClick={() => onExit("save")}
+          onClick={async () => await onExit("save")}
           className=""
         />
       </div>

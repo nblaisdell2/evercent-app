@@ -1,24 +1,31 @@
-import React, { ReactNode } from "react";
+import React, { ReactNode, useEffect, useState } from "react";
 import Card from "../elements/Card";
 import MyIcon from "../elements/MyIcon";
 import useModal, { ModalProps } from "../../hooks/useModal";
 import UnsavedChangesModal from "./UnsavedChangesModal";
 import { log } from "../../utils/log";
+import SavingScreen from "./SavingScreen";
+import { sleep } from "../../utils/util";
 
 function ModalContent({
   modalTitle,
   fullScreen,
   modalProps,
+  closeOnSave,
   children,
 }: {
   modalTitle: string;
   fullScreen: boolean;
   modalProps: ModalProps;
+  closeOnSave?: boolean;
   children?: ReactNode;
 }) {
   const modalPropsWarning = useModal();
+  const modalPropsSaving = useModal();
 
-  const onExit = (exitType: "back" | "discard" | "save") => {
+  const [wasOpen, setWasOpen] = useState(false);
+
+  const onExit = async (exitType: "back" | "discard" | "save") => {
     switch (exitType) {
       case "back":
         modalPropsWarning.closeModal();
@@ -32,16 +39,35 @@ function ModalContent({
         break;
 
       case "save":
-        if (modalProps.onSaveFn) modalProps.onSaveFn();
-
-        modalPropsWarning.closeModal();
-        modalProps.closeModal();
+        if (modalProps.onSaveFn) await modalProps.onSaveFn();
         break;
 
       default:
         break;
     }
   };
+
+  useEffect(() => {
+    const test = async () => {
+      if (modalProps.onSaveFn) {
+        if (modalProps.modalIsSaving) {
+          if (modalPropsWarning.isOpen) {
+            modalPropsWarning.closeModal();
+            setWasOpen(true);
+          }
+          modalPropsSaving.showModal();
+        } else {
+          await sleep(2000);
+          modalPropsSaving.closeModal();
+          if (wasOpen || closeOnSave) {
+            setWasOpen(false);
+            modalProps.closeModal();
+          }
+        }
+      }
+    };
+    test();
+  }, [modalProps.modalIsSaving]);
 
   const close = () => {
     if (modalProps.changesMade) {
@@ -82,6 +108,19 @@ function ModalContent({
           {children}
         </div>
       </Card>
+
+      <ModalContent
+        fullScreen={false}
+        modalTitle=""
+        modalProps={modalPropsSaving}
+      >
+        <SavingScreen
+          isSaved={!modalProps.modalIsSaving}
+          isSaving={modalProps.modalIsSaving}
+          loadingText={modalProps.loadingText}
+          savedText={modalProps.savedText}
+        />
+      </ModalContent>
 
       <ModalContent
         fullScreen={false}
