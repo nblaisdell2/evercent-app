@@ -15,6 +15,7 @@ import BudgetHelperWidget from "./widgets/budget-helper/BudgetHelperWidget";
 import BudgetAutomationWidget from "./widgets/budget-automation/BudgetAutomationWidget";
 import RegularExpensesWidget from "./widgets/regular-expenses/RegularExpensesWidget";
 import UpcomingExpensesWidget from "./widgets/upcoming-expenses/UpcomingExpensesWidget";
+import UpcomingExpensesFull from "./widgets/upcoming-expenses/UpcomingExpensesFull";
 
 export type WidgetProps = Pick<
   ModalProps,
@@ -119,11 +120,7 @@ function MainContent() {
           <Widget
             name={"Upcoming Expenses"}
             widgetComponent={<UpcomingExpensesWidget />}
-            fullComponent={
-              <div className="h-full flex justify-center items-center ">
-                Upcoming Expenses Full
-              </div>
-            }
+            fullComponent={<UpcomingExpensesFull />}
           />
         </div>
       </div>

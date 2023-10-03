@@ -104,7 +104,7 @@ function ModalContent({
             className="h-8 w-8 hover:cursor-pointer dark:text-red-600 hover:text-red-600"
           />
         </div>
-        <div id="modalContent" className="flex-grow">
+        <div id="modalContent" className="flex flex-col flex-grow">
           {children}
         </div>
       </Card>

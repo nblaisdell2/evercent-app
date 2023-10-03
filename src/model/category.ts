@@ -4,6 +4,7 @@ import {
   differenceInDays,
   differenceInMonths,
   isEqual,
+  isSameDay,
   parseISO,
   startOfMonth,
   startOfToday,
@@ -802,6 +803,30 @@ export const isUpcomingExpense = (category: Category) => {
   return category.upcomingDetails != null;
 };
 
+export const getUpcomingCategories = (
+  budget: Budget,
+  categoryGroups: CategoryGroup[],
+  payFrequency: PayFrequency,
+  nextPaydate: string
+) => {
+  const upcomingCategories = getAllCategories(categoryGroups, false).filter(
+    (cat) => isUpcomingExpense(cat)
+  );
+  if (upcomingCategories.length == 0) return null;
+
+  return upcomingCategories
+    .map(
+      (cat) =>
+        calculateUpcomingExpense(
+          budget,
+          cat,
+          payFrequency,
+          nextPaydate
+        ) as UpcomingExpenseDetails
+    )
+    .sort((a, b) => a.daysAway - b.daysAway);
+};
+
 export const calculateUpcomingExpense = (
   budget: Budget,
   category: Category,
@@ -837,17 +862,27 @@ export const calculateUpcomingExpense = (
 
   // log("  ", { neededToSave, amtSavedPerPaycheck, availableAmt });
 
-  const numPaychecks = Math.ceil(neededToSave / amtSavedPerPaycheck) - 1;
+  const numPaychecks = Math.ceil(neededToSave / amtSavedPerPaycheck);
   const dtCurrPaydate = parseISO(nextPaydate);
+  const todayIsPayday = isSameDay(dtCurrPaydate, new Date());
 
   // log("  ", { numPaychecks, dtCurrPaydate });
   let dtUpcomingPaydate = new Date();
   if (payFrequency == "Weekly") {
-    dtUpcomingPaydate = addWeeks(dtCurrPaydate, numPaychecks);
+    dtUpcomingPaydate = addWeeks(
+      dtCurrPaydate,
+      numPaychecks - (todayIsPayday ? 0 : 1)
+    );
   } else if (payFrequency == "Every 2 Weeks") {
-    dtUpcomingPaydate = addWeeks(dtCurrPaydate, numPaychecks * 2);
+    dtUpcomingPaydate = addWeeks(
+      dtCurrPaydate,
+      (numPaychecks - (todayIsPayday ? 0 : 1)) * 2
+    );
   } else if (payFrequency == "Monthly") {
-    dtUpcomingPaydate = addMonths(dtCurrPaydate, numPaychecks);
+    dtUpcomingPaydate = addMonths(
+      dtCurrPaydate,
+      numPaychecks - (todayIsPayday ? 0 : 1)
+    );
   }
 
   // log("  ", { dtUpcomingPaydate });
