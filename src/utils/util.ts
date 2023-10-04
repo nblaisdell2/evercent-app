@@ -1,4 +1,5 @@
 import { v4 } from "uuid";
+import { log } from "./log";
 export const generateUUID = v4;
 
 export const roundNumber = (num: number, decimals: number = 0) => {
@@ -53,8 +54,8 @@ export function getPercentString(num: number, digits: number = 0) {
 
 export function formatTimeAMPM(dt: Date) {
   const numHours = dt.getHours();
-  const isPM = numHours > 12;
-  const hours = isPM ? numHours - 12 : numHours;
+  const isPM = numHours >= 12;
+  const hours = numHours == 0 ? 12 : numHours > 12 ? numHours - 12 : numHours;
   return (
     hours.toString() +
     ":" +

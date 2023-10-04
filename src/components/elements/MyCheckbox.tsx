@@ -17,10 +17,14 @@ function MyCheckbox({
   return (
     <div
       className={`flex justify-center items-center ${
-        isLocked ? "bg-gray-400" : ""
+        isLocked
+          ? "bg-gray-400"
+          : selected || isDet
+          ? "color-accent"
+          : "bg-transparent"
       } h-4 w-4 border border-gray-400 rounded-[4px] mr-1 ${
         selected || isDet
-          ? "bg-opacity-100 color-accent text-white"
+          ? "bg-opacity-100 text-white"
           : parentIsHovered
           ? "bg-opacity-50"
           : "bg-opacity-0"

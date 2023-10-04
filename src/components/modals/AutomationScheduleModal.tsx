@@ -1,5 +1,5 @@
 import { CheckIcon, MinusCircleIcon } from "@heroicons/react/24/outline";
-import { addHours, parseISO, startOfHour } from "date-fns";
+import { addHours, parseISO, startOfDay, startOfHour } from "date-fns";
 import React, { useState } from "react";
 import Label from "../elements/Label";
 import MySelect from "../elements/MySelect";
@@ -26,6 +26,32 @@ function AutomationScheduleModal({
     currHour <= 12 ? currHour : currHour - 12
   );
   const [timeOfDay, setTimeOfDay] = useState(currHour <= 12 ? "AM" : "PM");
+
+  const setScheduledTime = () => {
+    if (hourOfDay && timeOfDay) {
+      let hoursToAdd =
+        timeOfDay == "PM"
+          ? hourOfDay == 12
+            ? hourOfDay
+            : hourOfDay + 12
+          : hourOfDay == 12
+          ? 0
+          : hourOfDay;
+
+      let dtNewPaydate = addHours(
+        startOfDay(parseISO(nextPaydate)),
+        hoursToAdd
+      );
+
+      // if (dtNewPaydate <= addHours(startOfHour(new Date()), 1)) {
+      if (dtNewPaydate <= startOfHour(new Date())) {
+        dtNewPaydate = incrementDateByFrequency(dtNewPaydate, payFrequency);
+      }
+
+      closeModal();
+      onNewTime(dtNewPaydate.toISOString());
+    }
+  };
 
   return (
     <div className="w-full h-full flex flex-col text-center">
@@ -70,26 +96,7 @@ function AutomationScheduleModal({
             icon={
               <CheckIcon className="h-10 w-10 text-green-600 stroke-2 mr-1" />
             }
-            onClick={() => {
-              // TODO: Set the new "next runtime" using the state values
-              if (hourOfDay && timeOfDay) {
-                let dtNewPaydate = new Date(parseISO(nextPaydate));
-                dtNewPaydate = addHours(
-                  dtNewPaydate,
-                  hourOfDay + (timeOfDay == "PM" ? 12 : 0)
-                );
-
-                if (dtNewPaydate < addHours(startOfHour(new Date()), 1)) {
-                  dtNewPaydate = incrementDateByFrequency(
-                    dtNewPaydate,
-                    payFrequency
-                  );
-                }
-
-                closeModal();
-                onNewTime(dtNewPaydate.toISOString());
-              }
-            }}
+            onClick={setScheduledTime}
             className={`w-[50%]`}
           />
           <MyButton

@@ -40,10 +40,7 @@ export type BudgetAutomationState = {
 function useBudgetAutomation(widgetProps: WidgetProps) {
   const {
     userData,
-    budget,
     categoryGroups,
-    categoryGroupsAll,
-    excludedCategories,
     autoRuns,
     pastRuns,
     saveAutoRuns,
@@ -61,13 +58,20 @@ function useBudgetAutomation(widgetProps: WidgetProps) {
       setSelectedPastRun(undefined);
       setSelectedPastRunCategory(undefined);
     } else {
-      setSelectedPastRun(pastRuns[0]);
+      setSelectedPastRun(
+        pastRuns.sort(
+          (a, b) =>
+            parseISO(b.runTime).getTime() - parseISO(a.runTime).getTime()
+        )[0]
+      );
     }
 
     setShowUpcoming(doShow);
   };
 
   const selectPastRunCategory = (item: CheckboxItem | null) => {
+    if (showUpcoming) return;
+
     if (item == null) {
       setSelectedPastRunCategory(undefined);
       return;

@@ -1,7 +1,9 @@
 import React from "react";
-import { format, parseISO } from "date-fns";
+import { format, parse, parseISO, startOfDay } from "date-fns";
+import zonedTimeToUtc from "date-fns-tz/zonedTimeToUtc";
 import {
   AutoRun,
+  AutoRunCategoryMonth,
   getAutoRunCategoryGroupTotal,
   getAutoRunCategoryTotal,
   getAutoRunTotal,
@@ -12,6 +14,7 @@ import LabelAndValue from "../../elements/LabelAndValue";
 import Card from "../../elements/Card";
 import useHierarchyTable from "../../../hooks/useHierarchyTable";
 import { BudgetAutomationState } from "../../../hooks/useBudgetAutomation";
+import { log } from "console";
 
 function AmountMonths({ baProps }: { baProps: BudgetAutomationState }) {
   const createList = (data: any) => {
@@ -107,21 +110,16 @@ function AmountMonths({ baProps }: { baProps: BudgetAutomationState }) {
         if (!cat) return <></>;
         return (
           <div
-            onClick={() => {
-              // if (!showUpcoming) {
-              //   // setSelectedItem(item);
-              //   selectPastRunCategory(item);
-              // }
-            }}
+            onClick={() => baProps.selectPastRunCategory(item)}
             className={`flex flex-grow justify-between font-mplus py-[1px] ${
               !baProps.showUpcoming &&
               item.id.toLowerCase() !=
                 baProps.selectedPastRunCategory?.categoryGUID.toLowerCase() &&
-              "hover:bg-gray-100"
+              "color-accent-hover"
             } hover:cursor-pointer rounded-lg ${
               item.id.toLowerCase() ==
                 baProps.selectedPastRunCategory?.categoryGUID.toLowerCase() &&
-              "bg-blue-900 hover:bg-blue-900 text-white font-bold"
+              "color-accent text-white font-bold"
             }`}
           >
             <div className="flex items-center">
@@ -150,23 +148,26 @@ function AmountMonths({ baProps }: { baProps: BudgetAutomationState }) {
             c.postingMonths.find((m: any) => m.postingMonth == item.name)
         );
         const month = cat?.postingMonths.find(
-          (m: any) => m.postingMonth == item.name
+          (m: any) => m?.postingMonth == item.name
         );
+
         return (
           <div className="flex flex-grow justify-between font-mplus text-gray-400 text-sm py-[1px] hover:cursor-pointer rounded-lg">
             <div className="flex items-center">
               <div>
-                {format(
-                  parseISO(month?.postingMonth || new Date().toISOString()),
-                  "MMM yyyy"
-                ).toUpperCase()}
+                {month?.postingMonth &&
+                  format(
+                    parseISO(month.postingMonth.substring(0, 10)),
+                    "MMM yyyy"
+                  ).toUpperCase()}
               </div>
             </div>
             <div className="pr-1">
-              {getMoneyString(
-                month?.amountToPost || month?.amountPosted || 0,
-                2
-              )}
+              {month &&
+                getMoneyString(
+                  month.amountToPost || month.amountPosted || 0,
+                  2
+                )}
             </div>
           </div>
         );
@@ -181,6 +182,7 @@ function AmountMonths({ baProps }: { baProps: BudgetAutomationState }) {
     : baProps.selectedPastRun;
   const hierarchyTableProps = useHierarchyTable(run, createList);
 
+  log("run", run);
   return (
     <div className="flex flex-col flex-grow h-full space-y-2">
       <div className="text-center font-mplus text-2xl sm:text-3xl font-extrabold">
@@ -200,7 +202,7 @@ function AmountMonths({ baProps }: { baProps: BudgetAutomationState }) {
           value={getMoneyString(run ? getAutoRunTotal(run) : 0)}
           classNameValue={"font-mplus text-base sm:text-2xl text-green-600"}
         />
-        {false && (
+        {baProps.showUpcoming && (
           <LabelAndValue
             label={"Locked?"}
             value={run?.isLocked ? "Yes" : "No"}

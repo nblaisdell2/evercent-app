@@ -9,9 +9,11 @@ import { BudgetAutomationState } from "../../../hooks/useBudgetAutomation";
 import { formatTimeAMPM } from "../../../utils/util";
 import MyButton from "../../elements/MyButton";
 import MyIcon from "../../elements/MyIcon";
+import CancelAutomationModal from "../../modals/CancelAutomationModal";
 
 function AutomationSchedule({ baProps }: { baProps: BudgetAutomationState }) {
   const modalProps = useModal();
+  const modalPropsCancel = useModal();
 
   const dtNextRunTime = parseISO(
     baProps.nextAutoRun?.runTime || new Date().toISOString()
@@ -19,6 +21,8 @@ function AutomationSchedule({ baProps }: { baProps: BudgetAutomationState }) {
   const hourDifference = differenceInHours(dtNextRunTime, new Date()) + 1;
   const [first, setFirst] = useState(false);
 
+  // When opening the Budget Automation widget, if a schedule has yet to be set,
+  // the user will be presented with the "Set Schedule" modal automatically
   useEffect(() => {
     if (!baProps.autoRuns[0]) {
       modalProps.showModal();
@@ -26,16 +30,15 @@ function AutomationSchedule({ baProps }: { baProps: BudgetAutomationState }) {
     setFirst(true);
   }, []);
 
+  // When the "Set Schedule" modal is closed, if they didn't pick a new time,
+  // the Budget Automation widget will automatically be closed, since they
+  // aren't able to interact with that widget until they set a scheduled time
   useEffect(() => {
     if (!modalProps.isOpen && !baProps.nextAutoRun?.runTime && first) {
       baProps.closeWidget();
       setFirst(false);
     }
   }, [modalProps.isOpen]);
-
-  const close = () => {
-    modalProps.closeModal();
-  };
 
   return (
     <>
@@ -45,11 +48,13 @@ function AutomationSchedule({ baProps }: { baProps: BudgetAutomationState }) {
             <div className="flex font-mplus text-2xl sm:text-3xl font-extrabold">
               Schedule
             </div>
-            <MyIcon
-              iconType={"EditIcon"}
-              className="h-8 w-8 stroke-2 ml-1 hover:cursor-pointer"
-              onClick={modalProps.showModal}
-            />
+            {!baProps.nextAutoRun.isLocked && (
+              <MyIcon
+                iconType={"EditIcon"}
+                className="h-8 w-8 stroke-2 ml-1 hover:cursor-pointer"
+                onClick={modalProps.showModal}
+              />
+            )}
           </div>
 
           <div className="flex justify-around">
@@ -96,7 +101,7 @@ function AutomationSchedule({ baProps }: { baProps: BudgetAutomationState }) {
               className="w-[50%]"
             />
             <MyButton
-              onClick={baProps.cancelAutomation}
+              onClick={modalPropsCancel.showModal}
               icon={
                 <MinusCircleIcon className="h-10 w-10 text-red-600 stroke-2 mr-1" />
               }
@@ -117,7 +122,19 @@ function AutomationSchedule({ baProps }: { baProps: BudgetAutomationState }) {
           payFrequency={baProps.payFrequency}
           nextPaydate={baProps.nextPaydate}
           onNewTime={baProps.setNewAutomationSchedule}
-          closeModal={close}
+          closeModal={modalProps.closeModal}
+        />
+      </ModalContent>
+
+      <ModalContent
+        fullScreen={false}
+        modalTitle={"Cancel Automation?"}
+        modalProps={modalPropsCancel}
+        closeOnSave={false}
+      >
+        <CancelAutomationModal
+          cancelAutomation={baProps.cancelAutomation}
+          closeModal={modalPropsCancel.closeModal}
         />
       </ModalContent>
     </>

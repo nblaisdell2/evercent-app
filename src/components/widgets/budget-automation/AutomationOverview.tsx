@@ -49,11 +49,11 @@ function AutomationOverview({ baProps }: { baProps: BudgetAutomationState }) {
             </div>
           </>
         ) : (
-          <div className="flex flex-col h-full">
+          <div className="flex flex-col w-full h-full">
             <div
               className="flex items-center hover:cursor-pointer"
               onClick={() => {
-                // selectPastRunCategory(null);
+                baProps.selectPastRunCategory(null);
               }}
             >
               <ArrowLeftIcon className="h-8 w-8 stroke-2 mr-1" />
@@ -101,16 +101,16 @@ function AutomationOverview({ baProps }: { baProps: BudgetAutomationState }) {
             </div>
 
             <div className="flex-grow h-full ">
-              <div className="border-b border-black mt-2 pb-1 text-xl font-bold">
+              <div className="border-b border-black dark:border-[#F6F9FA] mt-2 pb-1 text-xl font-bold">
                 Explanation of Amounts
               </div>
               <div className="">(explanation goes here)</div>
             </div>
             <div className="">
-              <div className="border-b border-black mt-2 pb-1 text-xl font-bold">
+              <div className="border-b border-black dark:border-[#F6F9FA] mt-2 pb-1 text-xl font-bold">
                 Amounts Posted
               </div>
-              <div className="flex justify-between border-b border-black">
+              <div className="flex justify-between border-b border-black dark:border-[#F6F9FA]">
                 <div className="text-sm text-center font-bold w-[25%] ">
                   Month/Year
                 </div>

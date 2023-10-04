@@ -133,18 +133,22 @@ export const getAutoRunPostingMonths = (autoRun: AutoRun) => {
 
     for (let j = 0; j < months.length; j++) {
       const currMonth = months[j];
-      if (currMonth.included) {
+      if (currMonth.included || currMonth.amountPosted != undefined) {
         if (!newMonths.has(currMonth.postingMonth)) {
           newMonths.set(currMonth.postingMonth, {
-            month: currMonth.postingMonth,
+            month: currMonth.postingMonth.substring(0, 10),
             amount: 0,
             percent: 0,
           });
         }
 
-        total += currMonth.amountToPost;
+        const amtToAdd =
+          currMonth.amountPosted != undefined
+            ? currMonth.amountPosted
+            : currMonth.amountToPost;
+        total += amtToAdd;
         (newMonths.get(currMonth.postingMonth) as PostingMonth).amount +=
-          currMonth.amountToPost;
+          amtToAdd;
       }
     }
   }

@@ -1,7 +1,7 @@
 import React from "react";
 import Card from "../../elements/Card";
 import MyToggleButton from "../../elements/MyToggleButton";
-import { AutoRun } from "../../../model/autoRun";
+import { AutoRun, getAutoRunTotal } from "../../../model/autoRun";
 import { BudgetAutomationState } from "../../../hooks/useBudgetAutomation";
 import {
   formatTimeAMPM,
@@ -72,43 +72,50 @@ function UpcomingPastList({ baProps }: { baProps: BudgetAutomationState }) {
           )}
         </div>
         <div className="overflow-y-auto no-scrollbar">
-          {runList.map((rt: AutoRun, i: number) => {
-            const pastRunListIndex = 0;
-            return (
-              <div
-                className={`flex w-full justify-around rounded-md ${
-                  (baProps.pastRuns.length > 0
-                    ? baProps.pastRuns.length - 1 - i
-                    : i) == (showUpcoming ? 0 : pastRunListIndex) && "font-bold"
-                } ${
-                  !showUpcoming &&
-                  baProps.pastRuns.length - 1 - i == pastRunListIndex &&
-                  "bg-gray-200 hover:bg-gray-200"
-                } ${!showUpcoming && "hover:cursor-pointer"} ${
-                  !showUpcoming &&
-                  baProps.pastRuns.length - 1 - i != pastRunListIndex &&
-                  "hover:bg-gray-100"
-                }
-                    }`}
-                key={i}
-                // onClick={() => selectPastRun(i)}
-              >
-                <div className={`w-full text-center`}>
-                  {format(parseISO(rt.runTime), "MM/dd/yyy")}
-                </div>
-                <div className={`w-full text-center`}>
-                  {formatTimeAMPM(parseISO(rt.runTime))}
-                </div>
-                {!showUpcoming && (
-                  <div className="w-full text-center text-green-500">
-                    {getMoneyString(
-                      0 /*getAutoRunTotal(rt, false, !showUpcoming)*/
-                    )}
+          {runList
+            .sort((a, b) => {
+              return !showUpcoming
+                ? parseISO(b.runTime).getTime() - parseISO(a.runTime).getTime()
+                : parseISO(a.runTime).getTime() - parseISO(b.runTime).getTime();
+            })
+            .map((rt: AutoRun, i: number) => {
+              const isSelected = rt.runID == baProps.selectedPastRun?.runID;
+              return (
+                <div
+                  className={`flex w-full justify-around rounded-md ${
+                    ((showUpcoming && i == 0) ||
+                      (!showUpcoming && isSelected)) &&
+                    "font-bold"
+                  } ${!showUpcoming && "hover:cursor-pointer"} ${
+                    !showUpcoming &&
+                    !isSelected &&
+                    "hover:bg-gray-200 dark:hover:bg-gray-800"
+                  }
+                  } ${
+                    isSelected &&
+                    !showUpcoming &&
+                    "bg-gray-300 dark:bg-gray-900 hover:bg-gray-300 dark:hover:bg-gray-900"
+                  }`}
+                  key={i}
+                  onClick={() => {
+                    if (showUpcoming) return;
+                    baProps.selectPastRun(rt);
+                  }}
+                >
+                  <div className={`w-full text-center`}>
+                    {format(parseISO(rt.runTime), "MM/dd/yyy")}
                   </div>
-                )}
-              </div>
-            );
-          })}
+                  <div className={`w-full text-center`}>
+                    {formatTimeAMPM(parseISO(rt.runTime))}
+                  </div>
+                  {!showUpcoming && (
+                    <div className="w-full text-center text-green-500">
+                      {getMoneyString(getAutoRunTotal(rt))}
+                    </div>
+                  )}
+                </div>
+              );
+            })}
         </div>
       </Card>
     </div>
