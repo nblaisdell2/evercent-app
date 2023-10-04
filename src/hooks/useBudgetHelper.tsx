@@ -57,7 +57,7 @@ export type BudgetHelperState = {
   updateExcludedCategories: (itemsToUpdate: CheckboxItem[]) => void;
 };
 
-function useBudgetHelper(widgetProps: WidgetProps | undefined) {
+function useBudgetHelper(widgetProps: WidgetProps) {
   const {
     userData,
     budget,
@@ -182,9 +182,7 @@ function useBudgetHelper(widgetProps: WidgetProps | undefined) {
   };
 
   const updateChangesMade = (newVal: boolean) => {
-    if (widgetProps?.setChangesMade) {
-      widgetProps.setChangesMade(newVal);
-    }
+    widgetProps.setChangesMade(newVal);
   };
 
   const updateExcludedCategories = (itemsToUpdate: CheckboxItem[]) => {
@@ -256,9 +254,7 @@ function useBudgetHelper(widgetProps: WidgetProps | undefined) {
   };
 
   const saveCategories = async () => {
-    if (widgetProps?.setModalIsSaving) {
-      widgetProps.setModalIsSaving(true);
-    }
+    widgetProps.setModalIsSaving(true);
 
     // save the category list results to the database
     await updateCategories({
@@ -268,9 +264,7 @@ function useBudgetHelper(widgetProps: WidgetProps | undefined) {
       excludedCategories: excludedList as ExcludedCategory[],
     });
 
-    if (widgetProps?.setModalIsSaving) {
-      widgetProps.setModalIsSaving(false);
-    }
+    widgetProps.setModalIsSaving(false);
 
     updateSelectedCategory(undefined);
     updateChangesMade(false);
@@ -329,9 +323,7 @@ function useBudgetHelper(widgetProps: WidgetProps | undefined) {
     hierarchyProps.setListData(
       createList(categoryList, hierarchyProps.expandedItems)
     );
-    if (widgetProps) {
-      widgetProps.setOnSaveFn(() => saveCategories);
-    }
+    widgetProps.setOnSaveFn(() => saveCategories);
   }, [categoryList]);
 
   // if (error) log("mutation error", mutError);
@@ -339,7 +331,7 @@ function useBudgetHelper(widgetProps: WidgetProps | undefined) {
   return {
     monthlyIncome: userData?.monthlyIncome || 0,
     nextPaydate: userData?.nextPaydate || new Date().toISOString(),
-    changesMade: widgetProps?.changesMade || false,
+    changesMade: widgetProps.changesMade,
     categoryList,
     hierarchyProps,
     selectedCategory,

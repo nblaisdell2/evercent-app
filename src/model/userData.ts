@@ -1,3 +1,4 @@
+import { addMonths, addWeeks } from "date-fns";
 import { getAPIResponse } from "../utils/api";
 import { log } from "../utils/log";
 
@@ -88,5 +89,18 @@ export const getAmountByPayFrequency = (
       return amount;
     default:
       return 0;
+  }
+};
+
+export const incrementDateByFrequency = (dt: Date, payFreq: PayFrequency) => {
+  switch (payFreq) {
+    case "Weekly":
+      return addWeeks(dt, 1);
+    case "Every 2 Weeks":
+      return addWeeks(dt, 2);
+    case "Monthly":
+      return addMonths(dt, 1);
+    default:
+      return dt;
   }
 };

@@ -1,6 +1,7 @@
 import {
   EvercentData,
   getAllEvercentData,
+  updateCachedAutoRuns,
   updateCachedCategories,
   updateCachedUserData,
 } from "../model/evercent";
@@ -17,6 +18,7 @@ import {
   updateBudgetCategoryAmount,
 } from "../model/budget";
 import { useState } from "react";
+import { cancelAutoRuns, saveAutoRunDetails } from "../model/autoRun";
 
 export type Queries =
   | "get-all-evercent-data"
@@ -26,7 +28,9 @@ export type Queries =
   | "connect-to-ynab"
   | "switch-budget"
   | "update-budget-category-amount"
-  | "get-budgets-list";
+  | "get-budgets-list"
+  | "save-auto-run-details"
+  | "cancel-auto-runs";
 
 export type Fn<Q extends Queries> = Q extends "get-all-evercent-data"
   ? EvercentData
@@ -44,6 +48,10 @@ export type Fn<Q extends Queries> = Q extends "get-all-evercent-data"
   ? typeof switchBudget
   : Q extends "connect-to-ynab"
   ? typeof connectToYNAB
+  : Q extends "save-auto-run-details"
+  ? typeof saveAutoRunDetails
+  : Q extends "cancel-auto-runs"
+  ? typeof cancelAutoRuns
   : never;
 
 export type FnType<T> = T extends (...args: any) => any
@@ -67,6 +75,22 @@ export type QueryLoadingState = null | "" | "loading" | "saved";
 
 function useEvercent() {
   const { user } = useAuth0();
+
+  const { mutate: saveAutoRuns } = useSQLMutation(
+    "save-auto-run-details",
+    saveAutoRunDetails,
+    "get-all-evercent-data",
+    false,
+    updateCachedAutoRuns
+  );
+
+  const { mutate: cancelAutoRunsUpcoming } = useSQLMutation(
+    "save-auto-run-details",
+    cancelAutoRuns,
+    "get-all-evercent-data",
+    false,
+    updateCachedAutoRuns
+  );
 
   const { mutate: saveNewUserDetails } = useSQLMutation(
     "update-user-details",
@@ -126,6 +150,9 @@ function useEvercent() {
 
     connectToYNAB: connect,
     updateBudgetCategoryAmount: updateBudgetCategory,
+
+    saveAutoRuns,
+    cancelAutoRuns: cancelAutoRunsUpcoming,
   };
 }
 

@@ -81,3 +81,18 @@ export const updateCachedCategories = (
     };
   }
 };
+
+export const updateCachedAutoRuns = (
+  old: EvercentData | undefined,
+  newData: AutoRun[] | undefined
+) => {
+  if (old && newData) {
+    log("updating cached auto runs", { old, newData });
+    if (newData.length == 0) return { ...old, autoRuns: [] };
+
+    return {
+      ...old,
+      autoRuns: [...newData],
+    };
+  }
+};

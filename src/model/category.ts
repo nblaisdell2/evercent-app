@@ -799,6 +799,27 @@ export const isRegularExpense = (category: Category) => {
   return category.regularExpenseDetails != null;
 };
 
+export const dueDateAndAmountSet = (
+  isMonthly: boolean | undefined,
+  nextDueDate: string | undefined,
+  categoryAmount: number,
+  budgetCategory: BudgetMonthCategory,
+  currMonth: Date
+) => {
+  // We have a non-monthly regular expense, we've posted an amount
+  // to this category AND not only is the month we posted to the same
+  // as this category's next due date, but the amount available on
+  // this budget category has reached the expected "category.amount",
+  // so this check will allow us to re-calculate accordingly.
+  if (isMonthly == undefined || isMonthly) return false;
+  const dtNextDueDate = parseISO(nextDueDate as string);
+  return (
+    startOfMonth(dtNextDueDate) == currMonth &&
+    budgetCategory.available >= categoryAmount
+  );
+};
+
+// Upcoming Expenses functions
 export const isUpcomingExpense = (category: Category) => {
   return category.upcomingDetails != null;
 };
@@ -899,24 +920,4 @@ export const calculateUpcomingExpense = (
     amountSaved: availableAmt,
     totalAmount: totalAmt,
   };
-};
-
-export const dueDateAndAmountSet = (
-  isMonthly: boolean | undefined,
-  nextDueDate: string | undefined,
-  categoryAmount: number,
-  budgetCategory: BudgetMonthCategory,
-  currMonth: Date
-) => {
-  // We have a non-monthly regular expense, we've posted an amount
-  // to this category AND not only is the month we posted to the same
-  // as this category's next due date, but the amount available on
-  // this budget category has reached the expected "category.amount",
-  // so this check will allow us to re-calculate accordingly.
-  if (isMonthly == undefined || isMonthly) return false;
-  const dtNextDueDate = parseISO(nextDueDate as string);
-  return (
-    startOfMonth(dtNextDueDate) == currMonth &&
-    budgetCategory.available >= categoryAmount
-  );
 };

@@ -34,20 +34,25 @@ function PostingMonthBreakdown({
     <>
       {newMonths.map((m) => {
         return (
-          <div className="flex justify-center" key={m.month}>
-            {m.month == "Total" && <div className="h-[1px] bg-black" />}
+          <div
+            className={`flex justify-center ${
+              m.month == "Total" &&
+              "border-t border-black dark:border-[#F6F9FA]"
+            }`}
+            key={m.month}
+          >
             <div className={`w-[60%] font-semibold text-right`}>
               {formatMonth(m)}
             </div>
 
             <div
-              className={`min-w-[25%] text-right font-semibold text-green-500`}
+              className={`min-w-[20%] text-right font-semibold text-green-500`}
             >
               {getMoneyString(m.amount, digits || 0)}
             </div>
 
-            <div className="flex-grow text-right font-semibold">
-              {showPercent && getPercentString(m.percent / 100)}
+            <div className="flex-grow text-right pl-2 font-semibold">
+              {showPercent && getPercentString(m.percent)}
             </div>
           </div>
         );

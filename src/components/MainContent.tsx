@@ -16,10 +16,15 @@ import BudgetAutomationWidget from "./widgets/budget-automation/BudgetAutomation
 import RegularExpensesWidget from "./widgets/regular-expenses/RegularExpensesWidget";
 import UpcomingExpensesWidget from "./widgets/upcoming-expenses/UpcomingExpensesWidget";
 import UpcomingExpensesFull from "./widgets/upcoming-expenses/UpcomingExpensesFull";
+import BudgetAutomationFull from "./widgets/budget-automation/BudgetAutomationFull";
 
 export type WidgetProps = Pick<
   ModalProps,
-  "changesMade" | "setChangesMade" | "setOnSaveFn" | "setModalIsSaving"
+  | "changesMade"
+  | "setChangesMade"
+  | "setOnSaveFn"
+  | "setModalIsSaving"
+  | "closeModal"
 >;
 
 function Widget({
@@ -37,8 +42,13 @@ function Widget({
   return (
     <>
       <Card
-        onClick={modalProps.showModal}
-        className="flex flex-col p-4 hover:cursor-pointer"
+        onClick={() => {
+          if (isLoading) return;
+          modalProps.showModal();
+        }}
+        className={`flex flex-col p-4 ${
+          isLoading ? "hover:cursor-default" : "hover:cursor-pointer"
+        }`}
       >
         <div className="font-cinzel text-center text-3xl  mb-2">{name}</div>
 
@@ -49,7 +59,12 @@ function Widget({
         )}
       </Card>
 
-      <ModalContent fullScreen={true} modalTitle={name} modalProps={modalProps}>
+      <ModalContent
+        fullScreen={true}
+        modalTitle={name}
+        modalProps={modalProps}
+        closeOnSave={name == "Budget Automation"}
+      >
         {["Budget Helper", "Budget Automation"].includes(name)
           ? cloneElement(fullComponent, {
               widgetProps: {
@@ -57,6 +72,7 @@ function Widget({
                 setChangesMade: modalProps.setChangesMade,
                 setOnSaveFn: modalProps.setOnSaveFn,
                 setModalIsSaving: modalProps.setModalIsSaving,
+                closeModal: modalProps.closeModal,
               } as WidgetProps,
             })
           : fullComponent}
@@ -102,11 +118,7 @@ function MainContent() {
           <Widget
             name={"Budget Automation"}
             widgetComponent={<BudgetAutomationWidget />}
-            fullComponent={
-              <div className="h-full flex justify-center items-center ">
-                Budget Automation Full
-              </div>
-            }
+            fullComponent={<BudgetAutomationFull />}
           />
           <Widget
             name={"Regular Expenses"}

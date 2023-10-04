@@ -50,3 +50,15 @@ export function getPercentString(num: number, digits: number = 0) {
   if (isNaN(num)) num = 0;
   return (num * 100).toFixed(digits) + "%";
 }
+
+export function formatTimeAMPM(dt: Date) {
+  const numHours = dt.getHours();
+  const isPM = numHours > 12;
+  const hours = isPM ? numHours - 12 : numHours;
+  return (
+    hours.toString() +
+    ":" +
+    dt.getMinutes().toString().padStart(2, "0") +
+    (isPM ? "PM" : "AM")
+  );
+}

@@ -7,12 +7,11 @@ import SelectedCategory from "./SelectedCategory";
 import useBudgetHelper from "../../../hooks/useBudgetHelper";
 import { log } from "../../../utils/log";
 import { WidgetProps } from "../../MainContent";
-import { CategoryGroup, ExcludedCategory } from "../../../model/category";
 
 function BudgetHelperFull({ widgetProps }: { widgetProps?: WidgetProps }) {
   log("RENDERING [BudgetHelperFull.tsx]", { widgetProps });
 
-  const bhProps = useBudgetHelper(widgetProps);
+  const bhProps = useBudgetHelper(widgetProps as WidgetProps);
   // log("What are the bhProps", bhProps);
   // log("category list data", bhProps.hierarchyProps.listData);
 
