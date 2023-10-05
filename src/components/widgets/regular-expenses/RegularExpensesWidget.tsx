@@ -1,17 +1,14 @@
 import React from "react";
-import {
-  Category,
-  CategoryGroup,
-  getAllCategories,
-} from "../../../model/category";
+import { getAllCategories, getRegularExpenses } from "../../../model/category";
 import LabelAndValue from "../../elements/LabelAndValue";
 import { getPercentString } from "../../../utils/util";
 import useEvercent from "../../../hooks/useEvercent";
 
 function RegularExpensesWidget() {
-  const { categoryGroups } = useEvercent();
-  const categories = getAllCategories(categoryGroups, true);
-  if (!categories) {
+  const { userData, categoryGroups } = useEvercent();
+  const regularExpenses = getRegularExpenses(categoryGroups);
+  const numRegularExpenses = getAllCategories(regularExpenses, false).length;
+  if (numRegularExpenses == 0) {
     return (
       <div className="h-full flex justify-center items-center">
         <div className=" font-bold text-2xl text-center">
@@ -22,13 +19,13 @@ function RegularExpensesWidget() {
       </div>
     );
   }
-  const numRegularExpenses = categories.reduce((prev, curr) => {
-    if (!curr.regularExpenseDetails) return prev;
-    return prev + 1;
-  }, 0);
-  const numExpensesWithTargetMet = categories.reduce((prev, curr) => {
-    if (!curr.regularExpenseDetails || curr.monthsAhead < 6) return prev;
-    return prev + 1;
+
+  const numExpensesWithTargetMet = getAllCategories(
+    regularExpenses,
+    false
+  ).reduce((prev, curr) => {
+    if (curr.monthsAhead >= (userData?.monthsAheadTarget || 6)) return prev + 1;
+    return prev;
   }, 0);
 
   return (

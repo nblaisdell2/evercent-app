@@ -10,7 +10,7 @@ function CancelAutomationModal({ cancelAutomation, closeModal }: Props) {
   return (
     <div className="flex flex-col font-mplus h-full p-4">
       <div className="overflow-y-auto h-0 flex-grow">
-        <div className="mb-8 text-sm sm:text-base">
+        <div className="mb-8">
           If you need to <span className="font-bold">turn off</span> the budget
           automation temporarily, you can do so below. This will cancel any
           upcoming runs so that you can manually interact with your budget

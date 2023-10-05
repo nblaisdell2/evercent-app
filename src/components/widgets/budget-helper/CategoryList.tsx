@@ -31,7 +31,7 @@ function CategoryList({ bhProps }: { bhProps: BudgetHelperState }) {
     ) : (
       <div
         key={grp.groupName}
-        className="flex py-[2px] sm:py-0 w-full font-bold text-right hover:bg-gray-300 dark:hover:bg-gray-800 hover:cursor-pointer hover:rounded-md"
+        className="flex py-[2px] sm:py-0 w-full font-bold text-right hover:bg-gray-300 dark:hover:bg-gray-900 hover:cursor-pointer hover:rounded-md"
       >
         <div className="flex w-[50%] sm:w-[26%] text-left">{grp.groupName}</div>
         <div className="hidden sm:block sm:w-[10%] justify-center"></div>

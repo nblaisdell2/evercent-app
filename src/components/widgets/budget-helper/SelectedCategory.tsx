@@ -172,7 +172,10 @@ function SelectedCategory({ bhProps }: { bhProps: BudgetHelperState }) {
                           if (pm.month == "Total") {
                             return pm.month;
                           }
-                          return format(parseISO(pm.month), "MMMM yyyy");
+                          return format(
+                            parseISO(pm.month.substring(0, 10)),
+                            "MMMM yyyy"
+                          );
                         }}
                       />
                     )}

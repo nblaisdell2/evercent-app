@@ -17,6 +17,7 @@ import RegularExpensesWidget from "./widgets/regular-expenses/RegularExpensesWid
 import UpcomingExpensesWidget from "./widgets/upcoming-expenses/UpcomingExpensesWidget";
 import UpcomingExpensesFull from "./widgets/upcoming-expenses/UpcomingExpensesFull";
 import BudgetAutomationFull from "./widgets/budget-automation/BudgetAutomationFull";
+import RegularExpensesFull from "./widgets/regular-expenses/RegularExpensesFull";
 
 export type WidgetProps = Pick<
   ModalProps,
@@ -65,7 +66,9 @@ function Widget({
         modalProps={modalProps}
         closeOnSave={name == "Budget Automation"}
       >
-        {["Budget Helper", "Budget Automation"].includes(name)
+        {["Budget Helper", "Budget Automation", "Regular Expenses"].includes(
+          name
+        )
           ? cloneElement(fullComponent, {
               widgetProps: {
                 changesMade: modalProps.changesMade,
@@ -123,11 +126,7 @@ function MainContent() {
           <Widget
             name={"Regular Expenses"}
             widgetComponent={<RegularExpensesWidget />}
-            fullComponent={
-              <div className="h-full flex justify-center items-center ">
-                Regular Expenses Full
-              </div>
-            }
+            fullComponent={<RegularExpensesFull />}
           />
           <Widget
             name={"Upcoming Expenses"}

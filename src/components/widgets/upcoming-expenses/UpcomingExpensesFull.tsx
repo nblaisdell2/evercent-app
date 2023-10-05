@@ -31,7 +31,7 @@ function UpcomingExpensesFull() {
         <div className="w-[16%] flex-grow text-right pr-6">Paychecks Away</div>
       </div>
       <div className="flex-grow h-0 overflow-y-scroll no-scrollbar">
-        {upcomingCategories.map((u) => {
+        {upcomingCategories?.map((u) => {
           return (
             <div
               key={u.categoryName}

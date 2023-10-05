@@ -1,7 +1,8 @@
 import { startOfMonth } from "date-fns";
 import { getAPIResponse } from "../utils/api";
 import { log } from "../utils/log";
-import { find } from "../utils/util";
+import { find, sum } from "../utils/util";
+import { CategoryGroup, PostingMonth, isRegularExpense } from "./category";
 
 export const FAKE_BUDGET_ID = "AAAAAAAA-BBBB-CCCC-DDDD-EEEEEEFFFFFF";
 
@@ -145,4 +146,135 @@ export const getBudgetCategory = (
     (cat) => cat.categoryID.toLowerCase() == categoryID.toLowerCase()
   );
   return budgetCategory;
+};
+
+export const getTotalAvailableInBudget = (budget: Budget) => {
+  // Check to see if there's any money in the "To Be Assigned" section
+  // from the first (current) budget month
+  const tbb = budget.months[0].tbb;
+
+  // Go through all the "available" amounts for the latest budget month
+  const finalBM = budget.months[budget.months.length - 1];
+  const available = finalBM.groups.reduce((prev, curr) => {
+    return prev + curr.available;
+  }, 0);
+
+  // Then, after adding those values up, and it should be the total available
+  // in the user's budget
+  return tbb + available;
+};
+
+export const getTotalBudgetedByMonth = (budget: Budget): PostingMonth[] => {
+  return budget.months.reduce((prev, curr, i) => {
+    if (i == 0) return prev;
+
+    const totalBudgeted = sum(curr.groups, "budgeted");
+    if (totalBudgeted <= 0) return prev;
+
+    return [
+      ...prev,
+      {
+        amount: totalBudgeted,
+        month: curr.month,
+        percent: 0,
+      },
+    ];
+  }, [] as PostingMonth[]);
+};
+
+export const getTotalBudgetedByMonthRegular = (
+  categoryGroups: CategoryGroup[],
+  budget: Budget,
+  groupID?: string,
+  categoryID?: string
+): PostingMonth[] => {
+  return budget.months.reduce((prev, curr, i) => {
+    if (i == 0) return prev;
+
+    let totalBudgeted = 0;
+    if (groupID == undefined && categoryID == undefined) {
+      for (let i = 0; i < curr.groups.length; i++) {
+        const budCats = curr.groups[i].categories;
+        const evCats = find(
+          categoryGroups,
+          (cg) =>
+            cg.groupID.toLowerCase() ==
+            curr.groups[i].categoryGroupID.toLowerCase()
+        )?.categories;
+
+        if (!evCats) continue;
+
+        for (let j = 0; j < budCats.length; j++) {
+          const budCat = budCats[j];
+          const evCat = find(
+            evCats,
+            (c) => c.categoryID.toLowerCase() == budCat.categoryID.toLowerCase()
+          );
+
+          if (!evCat) continue;
+          if (isRegularExpense(evCat)) {
+            totalBudgeted += budCat.budgeted;
+          }
+        }
+      }
+
+      totalBudgeted = sum(curr.groups, "budgeted");
+    } else if (groupID != undefined && categoryID == undefined) {
+      const thisGrp = find(
+        curr.groups,
+        (g) => g.categoryGroupID.toLowerCase() == groupID.toLowerCase()
+      );
+      const evCats = find(
+        categoryGroups,
+        (cg) =>
+          cg.groupID.toLowerCase() == thisGrp.categoryGroupID.toLowerCase()
+      )?.categories;
+
+      for (let j = 0; j < thisGrp.categories.length; j++) {
+        const budCat = thisGrp.categories[j];
+        const evCat = find(
+          evCats,
+          (c) => c.categoryID.toLowerCase() == budCat.categoryID.toLowerCase()
+        );
+        if (!evCat) continue;
+
+        if (isRegularExpense(evCat)) {
+          totalBudgeted += budCat.budgeted;
+        }
+      }
+    } else if (groupID && categoryID) {
+      const thisGrp = find(
+        curr.groups,
+        (g) => g.categoryGroupID.toLowerCase() == groupID.toLowerCase()
+      );
+      const thisCat = find(
+        thisGrp.categories,
+        (c) => c.categoryID.toLowerCase() == categoryID.toLowerCase()
+      );
+      const evCats = find(
+        categoryGroups,
+        (cg) =>
+          cg.groupID.toLowerCase() == thisGrp.categoryGroupID.toLowerCase()
+      ).categories;
+      const evCat = find(
+        evCats,
+        (c) => c.categoryID.toLowerCase() == thisCat.categoryID.toLowerCase()
+      );
+
+      if (isRegularExpense(evCat)) {
+        totalBudgeted = thisCat.budgeted;
+      }
+    }
+
+    if (totalBudgeted <= 0) return prev;
+
+    return [
+      ...prev,
+      {
+        amount: totalBudgeted,
+        month: curr.month,
+        percent: 0,
+      },
+    ];
+  }, [] as PostingMonth[]);
 };

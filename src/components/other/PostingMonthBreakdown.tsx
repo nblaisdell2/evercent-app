@@ -35,7 +35,7 @@ function PostingMonthBreakdown({
       {newMonths.map((m) => {
         return (
           <div
-            className={`flex justify-center ${
+            className={`flex justify-center space-x-2 ${
               m.month == "Total" &&
               "border-t border-black dark:border-[#F6F9FA]"
             }`}

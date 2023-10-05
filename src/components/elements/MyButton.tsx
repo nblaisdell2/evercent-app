@@ -17,7 +17,7 @@ function MyButton({
   return (
     <button
       onClick={onClick}
-      className={`px-4 rounded-md shadow-slate-400 shadow-sm  ${
+      className={`px-4 rounded-md shadow-slate-400 shadow-sm group  ${
         disabled
           ? "hover:cursor-not-allowed bg-gray-300 text-black"
           : "color-accent-secondary color-accent-hover"

@@ -330,7 +330,7 @@ const calculateAdjustedAmount = (
   }
 };
 
-const getPostingMonths = (
+export const getPostingMonths = (
   category: Category,
   months: BudgetMonth[],
   payFreq: PayFrequency,
@@ -797,6 +797,32 @@ export const getPercentIncome = (
 
 export const isRegularExpense = (category: Category) => {
   return category.regularExpenseDetails != null;
+};
+
+export const getRegularExpenses = (categoryGroups: CategoryGroup[]) => {
+  return categoryGroups.reduce((prev, curr) => {
+    const expenseCats = curr.categories.filter(
+      (c) => isRegularExpense(c) && c.regularExpenseDetails?.includeOnChart
+    );
+    if (expenseCats.length == 0) return prev;
+    return [
+      ...prev,
+      {
+        ...curr,
+        categories: expenseCats,
+      },
+    ];
+  }, [] as CategoryGroup[]);
+};
+
+export const getNumExpensesWithTargetMet = (
+  categoryGroups: CategoryGroup[],
+  monthsAheadTarget: number
+) => {
+  return getAllCategories(categoryGroups, false).reduce((prev, curr) => {
+    if (curr.monthsAhead >= monthsAheadTarget) return prev + 1;
+    return prev;
+  }, 0);
 };
 
 export const dueDateAndAmountSet = (
