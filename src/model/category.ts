@@ -893,7 +893,7 @@ export const getUpcomingCategories = (
   const upcomingCategories = getAllCategories(categoryGroups, false).filter(
     (cat) => isUpcomingExpense(cat)
   );
-  if (upcomingCategories.length == 0) return null;
+  if (upcomingCategories.length == 0) return [];
 
   return upcomingCategories
     .map(

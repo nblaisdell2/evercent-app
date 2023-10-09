@@ -291,6 +291,7 @@ function useRegularExpenses(widgetProps: WidgetProps) {
   // reload our regular expenses when we recognize a change in that list
   // of category groups
   useEffect(() => {
+    log("regular expenses useEffect");
     const newRegularExpenses = getPostingMonthsBudgeted(
       getRegularExpenses(categoryGroups)
     );
@@ -534,7 +535,7 @@ function useRegularExpenses(widgetProps: WidgetProps) {
   };
 
   const hierarchyTableData = useHierarchyTable(
-    getPostingMonthsBudgeted(regularExpenses),
+    [], //getPostingMonthsBudgeted(regularExpenses),
     createList
   );
   // log("maps", { monthMapCategory, monthMapGroup });

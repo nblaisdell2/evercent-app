@@ -8,7 +8,7 @@ import { log } from "../utils/log";
 
 import Card from "./elements/Card";
 import WidgetLoader from "./other/WidgetLoader";
-import { FAKE_BUDGET_ID } from "../model/budget";
+import { Budget, FAKE_BUDGET_ID } from "../model/budget";
 import { YNABConnectButton } from "./header/YNABConnection";
 import BudgetHelperFull from "./widgets/budget-helper/BudgetHelperFull";
 import BudgetHelperWidget from "./widgets/budget-helper/BudgetHelperWidget";
@@ -18,6 +18,8 @@ import UpcomingExpensesWidget from "./widgets/upcoming-expenses/UpcomingExpenses
 import UpcomingExpensesFull from "./widgets/upcoming-expenses/UpcomingExpensesFull";
 import BudgetAutomationFull from "./widgets/budget-automation/BudgetAutomationFull";
 import RegularExpensesFull from "./widgets/regular-expenses/RegularExpensesFull";
+import { getRegularExpenses, getUpcomingCategories } from "../model/category";
+import { PayFrequency } from "../model/userData";
 
 export type WidgetProps = Pick<
   ModalProps,
@@ -37,18 +39,31 @@ function Widget({
   widgetComponent: JSX.Element;
   fullComponent: JSX.Element;
 }) {
-  const { isLoading } = useEvercent();
+  const { isLoading, userData, budget, categoryGroups } = useEvercent();
   const modalProps = useModal();
+
+  const shouldOpenWidget =
+    !isLoading &&
+    (["Budget Helper", "Budget Automation"].includes(name) ||
+      (name == "Regular Expenses" &&
+        getRegularExpenses(categoryGroups).length > 0) ||
+      (name == "Upcoming Expenses" &&
+        getUpcomingCategories(
+          budget as Budget,
+          categoryGroups,
+          userData?.payFrequency as PayFrequency,
+          userData?.nextPaydate as string
+        ).length > 0));
 
   return (
     <>
       <Card
         onClick={() => {
-          if (isLoading) return;
+          if (!shouldOpenWidget) return;
           modalProps.showModal();
         }}
         className={`flex flex-col p-4 ${
-          isLoading ? "hover:cursor-default" : "hover:cursor-pointer"
+          !shouldOpenWidget ? "hover:cursor-default" : "hover:cursor-pointer"
         }`}
       >
         <div className="font-cinzel text-center text-3xl  mb-2">{name}</div>

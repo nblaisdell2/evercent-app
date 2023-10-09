@@ -16,7 +16,7 @@ function UpcomingExpensesWidget() {
     userData?.payFrequency as PayFrequency,
     userData?.nextPaydate as string
   );
-  if (!upcomingCategories) {
+  if (upcomingCategories.length == 0) {
     return (
       <div className="h-full flex justify-center items-center">
         <div className=" font-bold text-2xl text-center">
