@@ -3,25 +3,22 @@ import {
   MinusCircleIcon,
   QuestionMarkCircleIcon,
 } from "@heroicons/react/24/outline";
-import { format, parseISO } from "date-fns";
+import { format, parseISO, startOfMonth, startOfToday } from "date-fns";
 import React, { useState } from "react";
 import Card from "../../elements/Card";
 import HierarchyTable, { CheckboxItem } from "../../elements/HierarchyTable";
 import Label from "../../elements/Label";
 import LabelAndValue from "../../elements/LabelAndValue";
 import MyButton from "../../elements/MyButton";
-import {
-  find,
-  getMoneyString,
-  getPercentString,
-  sum,
-} from "../../../utils/util";
+import { getMoneyString, getPercentString, sum } from "../../../utils/util";
 import PostingMonthBreakdown from "../../other/PostingMonthBreakdown";
 import { RegularExpensesState } from "../../../hooks/useRegularExpenses";
 import useModal from "../../../hooks/useModal";
 import ModalContent from "../../modals/ModalContent";
 import ResetExpensesProgress from "../../modals/ResetExpensesProgress";
 import { log } from "../../../utils/log";
+import { PostingMonth } from "../../../model/category";
+import { Item } from "react-stately";
 
 function RegularExpenseDetails({ reProps }: { reProps: RegularExpensesState }) {
   const modalProps = useModal();
@@ -36,7 +33,7 @@ function RegularExpenseDetails({ reProps }: { reProps: RegularExpensesState }) {
           className={`flex-grow border-r rounded-tl-md rounded-bl-md border-blue-900 dark:border-purple-700 text-center hover:cursor-pointer hover:bg-blue-700 dark:hover:bg-purple-300 dark:hover:text-black ${
             clicked?.id == item.id ? "hover:opacity-100" : "hover:opacity-60"
           } hover:text-white hover:font-bold`}
-          onClick={() => reProps.updateMonthsAheadForCategory(item.id, false)}
+          onClick={() => reProps.updateMonthsAheadForCategory(item.data, false)}
           onMouseDown={() => {
             setClicked(item);
           }}
@@ -56,7 +53,7 @@ function RegularExpenseDetails({ reProps }: { reProps: RegularExpensesState }) {
           className={`flex-grow border-l border-blue-900 dark:border-purple-700 rounded-tr-md rounded-br-md text-center hover:cursor-pointer hover:bg-blue-700 dark:hover:bg-purple-300 dark:hover:text-black ${
             clicked?.id == item.id ? "hover:opacity-100" : "hover:opacity-60"
           } hover:text-white hover:font-bold`}
-          onClick={() => reProps.updateMonthsAheadForCategory(item.id, true)}
+          onClick={() => reProps.updateMonthsAheadForCategory(item.data, true)}
           onMouseDown={() => {
             setClicked(item);
           }}
@@ -79,8 +76,7 @@ function RegularExpenseDetails({ reProps }: { reProps: RegularExpensesState }) {
   const getRowContent = (item: CheckboxItem, indent: number) => {
     switch (indent) {
       case 0: {
-        // log("inside getRowContent - getting posting months");
-        const postingMonths = reProps.getPostingMonthsForGroup(item.id);
+        const postingMonths = reProps.getPostingMonthsForGroup(item.data);
         // log(postingMonths);
 
         return (
@@ -103,19 +99,10 @@ function RegularExpenseDetails({ reProps }: { reProps: RegularExpensesState }) {
         );
       }
       case 1: {
-        const grpID = reProps.regularExpenses.find((r) =>
-          r.categories.some(
-            (c) => c.categoryID.toLowerCase() == item.id.toLowerCase()
-          )
-        )?.groupID;
-        if (!grpID) return <></>;
+        if (!item.data) return <></>;
 
-        // log("inside getRowContent - getting posting months for category");
-        const postingMonths = reProps.getPostingMonthsForCategory(
-          grpID,
-          item.id
-        );
-        // log(postingMonths);
+        const postingMonths = reProps.getPostingMonthsForCategory(item.data);
+        // log("postingMonths", postingMonths);
 
         // const grp = regularExpenses.filter(
         //   (g: any) => g.groupID == item.parentId
@@ -123,12 +110,9 @@ function RegularExpenseDetails({ reProps }: { reProps: RegularExpensesState }) {
         // const cat = grp?.categories.filter(
         //   (c: any) => c.categoryID == item.id
         // )[0];
-        // const monthsCalc = [];
-        // // cat.savedAmounts.filter(
-        // //   (pm) =>
-        // //     pm?.month !==
-        // //     getFirstOfMonth(parseDate(getDate_Today())).toISOString()
-        // // );
+        const monthsCalc = postingMonths.filter(
+          (pm) => pm?.month !== startOfMonth(new Date()).toISOString()
+        );
         return (
           <div
             className={`flex group w-full justify-between items-center font-mplus py-[1px] text-sm sm:text-base ${
@@ -147,13 +131,13 @@ function RegularExpenseDetails({ reProps }: { reProps: RegularExpensesState }) {
                 resetProgress ? "w-[17%]" : "w-[25%]"
               } text-center `}
             >
-              {/* {postingMonths.length == 1 &&
+              {postingMonths.length == 1 &&
                 monthsCalc.length !== postingMonths.length && (
                   <span className="text-red-500 text-lg font-bold">
                     &lowast;
                   </span>
-                )} */}
-              {postingMonths.length}
+                )}
+              {monthsCalc.length}
             </div>
             <div
               className={`${
@@ -166,35 +150,9 @@ function RegularExpenseDetails({ reProps }: { reProps: RegularExpensesState }) {
         );
       }
       case 2: {
-        // const grp = regularExpenses.filter((g) =>
-        //   g.categories.find((cat: any) => cat.categoryID == item.parentId)
-        // )[0];
-        // const cat = grp.categories.filter(
-        //   (c: any) => c.categoryID == item.parentId
-        // )[0];
-        // const thisSavedAmt = cat.savedAmounts.filter(
-        //   (pm: any) => pm?.month == item.id
-        // )[0];
+        if (!item.data) return <></>;
 
-        const grpID = reProps.regularExpenses.find((r) =>
-          r.categories.some(
-            (c) => c.categoryID.toLowerCase() == item.parentId.toLowerCase()
-          )
-        )?.groupID;
-
-        const catID = find(
-          reProps.regularExpenses,
-          (cg) => cg.groupID.toLowerCase() == grpID?.toLowerCase()
-        ).categories.find(
-          (c) => c.categoryID.toLowerCase() == item.parentId.toLowerCase()
-        )?.categoryID;
-
-        const postingMonths = reProps.getPostingMonthsForCategory(
-          grpID as string,
-          catID as string
-        );
-
-        const currMonth = postingMonths.find((pm) => pm.month == item.id);
+        const currMonth = item.data as PostingMonth;
 
         return (
           <div className="flex w-full justify-between items-center font-mplus py-[1px] text-gray-400 text-xs sm:text-sm">
@@ -235,8 +193,10 @@ function RegularExpenseDetails({ reProps }: { reProps: RegularExpensesState }) {
     }
   };
 
+  const budgetTotal = sum(reProps.totalBudgetedByMonth, "amount");
   const resetProgress = reProps.postingDetails.status == "prep";
   // log("table data", reProps.regularExpensesTableData);
+  // log("current posting details", reProps.postingDetails);
 
   return (
     <>
@@ -258,32 +218,32 @@ function RegularExpenseDetails({ reProps }: { reProps: RegularExpensesState }) {
                           Future Months
                         </div>
                       }
-                      value={getMoneyString(
-                        sum(reProps.totalBudgetedByMonth, "amount")
-                      )}
+                      value={getMoneyString(budgetTotal)}
                       classNameLabel={"line"}
                       classNameValue={"text-green-500 text-2xl"}
                     />
 
-                    <LabelAndValue
-                      label={"Total Saved by Month"}
-                      value={
-                        <PostingMonthBreakdown
-                          months={reProps.totalBudgetedByMonth}
-                          showPercent={false}
-                          showTotal={false}
-                          formatMonth={(pm) =>
-                            pm.month == "Total"
-                              ? pm.month
-                              : format(
-                                  parseISO(pm.month.substring(0, 10)),
-                                  "MMM yyyy"
-                                ).toUpperCase()
-                          }
-                        />
-                      }
-                      classNameValue={"h-24 w-full overflow-y-auto"}
-                    />
+                    {budgetTotal > 0 && (
+                      <LabelAndValue
+                        label={"Total Saved by Month"}
+                        value={
+                          <PostingMonthBreakdown
+                            months={reProps.totalBudgetedByMonth}
+                            showPercent={false}
+                            showTotal={false}
+                            formatMonth={(pm) =>
+                              pm.month == "Total"
+                                ? pm.month
+                                : format(
+                                    parseISO(pm.month.substring(0, 10)),
+                                    "MMM yyyy"
+                                  ).toUpperCase()
+                            }
+                          />
+                        }
+                        classNameValue={"h-24 w-full overflow-y-auto"}
+                      />
+                    )}
 
                     <MyButton
                       buttonText={
@@ -387,6 +347,28 @@ function RegularExpenseDetails({ reProps }: { reProps: RegularExpensesState }) {
                   indentPixels={"20px"}
                   isCollapsible={true}
                   disableOnClick={hovered !== null}
+                  onDataChanged={(newItems: CheckboxItem[]) => {
+                    log("what are the new items?", newItems);
+                    const newGroups = newItems
+                      .filter(
+                        (itm) =>
+                          itm.parentId == "" &&
+                          itm.expanded != undefined &&
+                          itm.expanded
+                      )
+                      .map((itm) => itm.id);
+                    const newCats = newItems
+                      .filter(
+                        (itm) =>
+                          itm.parentId != "" &&
+                          itm.expanded != undefined &&
+                          itm.expanded
+                      )
+                      .map((itm) => itm.id);
+                    reProps.setExpandedGroups(newGroups);
+                    reProps.setExpandedCategories(newCats);
+                    // reProps.regularExpensesTableData.setListData(newItems);
+                  }}
                 />
               </div>
             </div>

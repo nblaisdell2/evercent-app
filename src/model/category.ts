@@ -250,7 +250,8 @@ const calculateMonthsAhead = (
 const calculateAdjustedAmount = (
   category: Category,
   months: BudgetMonth[],
-  recalculate: boolean
+  recalculate: boolean,
+  temporary?: boolean
 ): number => {
   // If it's not a regular expense, or if it is a regular expense,
   // and it's a monthly expense, simply return the user's entered category amount
@@ -269,6 +270,8 @@ const calculateAdjustedAmount = (
   let numMonths = 0;
   if (!recalculate) {
     numMonths = category.regularExpenseDetails.monthsDivisor;
+  } else if (temporary) {
+    numMonths = getNumberOfMonthsByFrequency(category.regularExpenseDetails);
   } else {
     // Get BudgetMonthCategory from the same month of
     // this category's next due date
@@ -337,9 +340,9 @@ export const getPostingMonths = (
   nextPaydate: string,
   overrideNum?: number | undefined
 ): PostingMonth[] => {
-  const DEBUG = category.name == "Rent/Mortgage";
+  const DEBUG = category.name == "YNAB";
 
-  // if (DEBUG) log("category", { category, payFreq, nextPaydate });
+  if (DEBUG) log("category", { category, payFreq, nextPaydate, overrideNum });
 
   let postingMonths: PostingMonth[] = [];
   const useOverride = overrideNum != undefined;
@@ -352,7 +355,7 @@ export const getPostingMonths = (
 
   let currMonth = parseISO(nextPaydate);
 
-  // if (DEBUG) log("amounts", { totalAmt, totalDesired, currMonth, useOverride });
+  if (DEBUG) log("amounts", { totalAmt, totalDesired, currMonth, useOverride });
 
   // Keep finding months until
   //  1. We run out of money (totalAmt)
@@ -362,11 +365,11 @@ export const getPostingMonths = (
     (!useOverride && totalAmt > 0) ||
     (useOverride && postingMonths.length < overrideNum)
   ) {
-    // if (DEBUG) log("getting budget month", { currMonth });
+    if (DEBUG) log("getting budget month", { currMonth });
     // log("getPostingMonths");
     const bm = getBudgetMonth(months, currMonth);
     if (!bm) {
-      // if (DEBUG) log("Gotta leave!");
+      if (DEBUG) log("Gotta leave!");
       return postingMonths;
     }
 
@@ -388,7 +391,17 @@ export const getPostingMonths = (
         desiredPostAmt = totalDesired;
       }
 
-      // if (DEBUG) log("desiredPostAmt", { desiredPostAmt });
+      if (DEBUG) log("desiredPostAmt", { desiredPostAmt });
+
+      if (
+        useOverride &&
+        isEqual(parseISO(bm.month), startOfMonth(new Date())) &&
+        !category.regularExpenseDetails?.multipleTransactions &&
+        bc.activity < 0
+      ) {
+        currMonth = addMonths(currMonth, 1);
+        continue;
+      }
 
       if (desiredPostAmt !== -1) {
         const postAmt = useOverride
@@ -406,24 +419,45 @@ export const getPostingMonths = (
         // recalculate totalDesired using repeat frequency here
         // because of non-monthly regular expense && due date month is currMonth
         // && ynab available == category.amount
-        if (
-          dueDateAndAmountSet(
-            category.regularExpenseDetails?.isMonthly,
-            category.regularExpenseDetails?.nextDueDate,
-            category.amount,
+        if (DEBUG)
+          log("gotta recalculate?", {
+            category,
             bc,
-            currMonth
-          )
+            currMonth,
+            overrideNum,
+          });
+        if (
+          (overrideNum == undefined &&
+            dueDateAndAmountSet(
+              category.regularExpenseDetails?.isMonthly,
+              category.regularExpenseDetails?.nextDueDate,
+              category.amount,
+              bc,
+              currMonth
+            )) ||
+          (overrideNum != undefined &&
+            category?.regularExpenseDetails?.nextDueDate &&
+            isEqual(
+              startOfMonth(currMonth),
+              startOfMonth(parseISO(category.regularExpenseDetails.nextDueDate))
+            ))
         ) {
-          // log(
-          //   "Recalculating totalDesired due to due date being met for category!"
-          // );
-          totalDesired = calculateAdjustedAmount(category, months, true);
+          log(
+            "Recalculating totalDesired due to due date being met for category!"
+          );
+          const temporary = overrideNum == undefined ? undefined : true;
+          totalDesired = calculateAdjustedAmount(
+            category,
+            months,
+            true,
+            temporary
+          );
+          log({ totalDesired });
         }
       }
     }
 
-    // if (DEBUG) log("ADVANCING TO NEXT MONTH");
+    if (DEBUG) log("ADVANCING TO NEXT MONTH");
     currMonth = addMonths(currMonth, 1);
   }
 

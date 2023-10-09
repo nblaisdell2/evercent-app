@@ -2,6 +2,7 @@ import React from "react";
 import Card from "../../elements/Card";
 import { RegularExpensesState } from "../../../hooks/useRegularExpenses";
 import { Category, CategoryGroup } from "../../../model/category";
+import { startOfMonth } from "date-fns";
 
 function RegularExpenseChart({ reProps }: { reProps: RegularExpensesState }) {
   const getChartBarColor = (monthsAhead: number, target: number) => {
@@ -22,7 +23,9 @@ function RegularExpenseChart({ reProps }: { reProps: RegularExpensesState }) {
   };
 
   const getChartItemAndBar = (category: Category, target: number) => {
-    const monthsAhead = category.monthsAhead;
+    const monthsAhead = category.postingMonths.filter(
+      (pm) => pm?.month !== startOfMonth(new Date()).toISOString()
+    ).length;
     const barWidth = 10.6 * (target == 3 ? 2 : 1);
 
     let barVal = target == 12 ? monthsAhead / 2 : monthsAhead;
@@ -37,7 +40,7 @@ function RegularExpenseChart({ reProps }: { reProps: RegularExpensesState }) {
     // console.log({ barVal, barWidth, target });
     const resetProgress = reProps.postingDetails.status == "prep";
     return (
-      <div className="flex items-center">
+      <div key={category.categoryID} className="flex items-center">
         <div className="w-[23.5%] text-right pr-[2px]">{category.name}</div>
         <div
           style={{
@@ -62,7 +65,10 @@ function RegularExpenseChart({ reProps }: { reProps: RegularExpensesState }) {
     target: number
   ) => {
     return (
-      <div className="flex w-full h-fit border-b border-black dark:border-[#F6F9FA]">
+      <div
+        key={categoryGroup.groupID}
+        className="flex w-full h-fit border-b border-black dark:border-[#F6F9FA]"
+      >
         <div className="flex justify-end items-center w-[15%] text-right font-extrabold pr-2 pb-1">
           <div>{categoryGroup.groupName}</div>
         </div>

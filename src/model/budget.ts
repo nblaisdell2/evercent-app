@@ -1,8 +1,13 @@
 import { startOfMonth } from "date-fns";
 import { getAPIResponse } from "../utils/api";
 import { log } from "../utils/log";
-import { find, sum } from "../utils/util";
-import { CategoryGroup, PostingMonth, isRegularExpense } from "./category";
+import { find, sleep, sum } from "../utils/util";
+import {
+  CategoryGroup,
+  PostingMonth,
+  getAllCategories,
+  isRegularExpense,
+} from "./category";
 
 export const FAKE_BUDGET_ID = "AAAAAAAA-BBBB-CCCC-DDDD-EEEEEEFFFFFF";
 
@@ -99,6 +104,13 @@ export const updateBudgetCategoryAmount = async ({
   month: string;
   newBudgetedAmount: number;
 }) => {
+  log("using API to post to budget", {
+    UserID: userID,
+    BudgetID: budgetID,
+    CategoryID: categoryID,
+    Month: month.substring(0, 10),
+    NewBudgetedAmount: newBudgetedAmount,
+  });
   const { data, error, headers } = await getAPIResponse({
     method: "POST",
     url: "/budget/updateCategoryAmount",
@@ -106,7 +118,7 @@ export const updateBudgetCategoryAmount = async ({
       UserID: userID,
       BudgetID: budgetID,
       CategoryID: categoryID,
-      Month: month,
+      Month: month.substring(0, 10),
       NewBudgetedAmount: newBudgetedAmount,
     },
   });
@@ -164,11 +176,25 @@ export const getTotalAvailableInBudget = (budget: Budget) => {
   return tbb + available;
 };
 
-export const getTotalBudgetedByMonth = (budget: Budget): PostingMonth[] => {
+export const getTotalBudgetedByMonth = (
+  budget: Budget,
+  regularExpenses: CategoryGroup[]
+): PostingMonth[] => {
   return budget.months.reduce((prev, curr, i) => {
     if (i == 0) return prev;
 
-    const totalBudgeted = sum(curr.groups, "budgeted");
+    let totalBudgeted = 0;
+    const regCategories = getAllCategories(regularExpenses, false);
+    for (let i = 0; i < regCategories.length; i++) {
+      if (isRegularExpense(regCategories[i])) {
+        const bc = getBudgetCategory(
+          curr,
+          regCategories[i].categoryGroupID,
+          regCategories[i].categoryID
+        );
+        totalBudgeted += bc.budgeted;
+      }
+    }
     if (totalBudgeted <= 0) return prev;
 
     return [

@@ -8,7 +8,7 @@ import { log } from "../../../utils/log";
 import useRegularExpenses from "../../../hooks/useRegularExpenses";
 
 function RegularExpensesFull({ widgetProps }: { widgetProps?: WidgetProps }) {
-  log("RENDERING [RegularExpensesFull.tsx]", { widgetProps });
+  // log("RENDERING [RegularExpensesFull.tsx]", { widgetProps });
 
   const reProps = useRegularExpenses(widgetProps as WidgetProps);
   log("What are the reProps", reProps);

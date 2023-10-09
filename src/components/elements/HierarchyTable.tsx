@@ -8,6 +8,7 @@ export type CheckboxItem = {
   parentId: string;
   id: string;
   name: string;
+  data?: any;
   selected?: boolean;
   expanded?: boolean;
   locked?: boolean;

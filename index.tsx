@@ -14,7 +14,7 @@ const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
       // If a query fails, don't retry
-      retry: false,
+      retry: true,
       retryOnMount: false,
       // data is never considered stale
       staleTime: Infinity,
@@ -29,6 +29,10 @@ const queryClient = new QueryClient({
 
       // Default Query to run, can be overridden
       // queryFn: defaultQueryFn,
+    },
+    mutations: {
+      retry: true,
+      retryDelay: 1000,
     },
   },
 });

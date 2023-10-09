@@ -1,6 +1,6 @@
-import { useEffect, useState } from "react";
+import { Dispatch, SetStateAction, useEffect, useState } from "react";
 import { WidgetProps } from "../components/MainContent";
-import useEvercent from "./useEvercent";
+import useEvercent, { Queries } from "./useEvercent";
 import {
   Category,
   CategoryGroup,
@@ -12,6 +12,8 @@ import {
 import {
   Budget,
   BudgetMonth,
+  getBudgetCategory,
+  getBudgetMonth,
   getTotalAvailableInBudget,
   getTotalBudgetedByMonth,
   getTotalBudgetedByMonthRegular,
@@ -20,8 +22,9 @@ import { PayFrequency, UserData } from "../model/userData";
 import useHierarchyTable, { HierarchyTableState } from "./useHierarchyTable";
 import { log } from "../utils/log";
 import { CheckboxItem } from "../components/elements/HierarchyTable";
-import { find } from "../utils/util";
-import { getAutoRunPostingMonths } from "../model/autoRun";
+import { getDistinctValues, sleep, sum } from "../utils/util";
+import { useQueryClient } from "@tanstack/react-query";
+import { EvercentData } from "../model/evercent";
 
 export type RegularExpenseBudgetAmounts = {
   totalAvailable: number;
@@ -51,17 +54,16 @@ export type RegularExpensesState = {
   postingDetails: RegularExpensePostingDetails;
   startResetProgress: () => void;
   undoResetProgress: () => void;
-  postCategoryAmountsToBudget: () => Promise<void>;
   updateMonthsAheadForCategory: (
-    categoryID: string,
+    category: Category,
     increment: boolean
   ) => void;
+  postCategoryAmountsToBudget: () => Promise<void>;
   regularExpensesTableData: HierarchyTableState;
-  getPostingMonthsForGroup: (groupID: string) => PostingMonth[];
-  getPostingMonthsForCategory: (
-    groupID: string,
-    categoryID: string
-  ) => PostingMonth[];
+  setExpandedGroups: Dispatch<SetStateAction<string[]>>;
+  setExpandedCategories: Dispatch<SetStateAction<string[]>>;
+  getPostingMonthsForGroup: (grp: CategoryGroup) => PostingMonth[];
+  getPostingMonthsForCategory: (category: Category) => PostingMonth[];
 };
 
 function useRegularExpenses(widgetProps: WidgetProps) {
@@ -73,8 +75,10 @@ function useRegularExpenses(widgetProps: WidgetProps) {
     updateMonthsAhead,
   } = useEvercent();
 
+  const queryClient = useQueryClient();
+
   const [regularExpenses, setRegularExpenses] = useState(
-    getRegularExpenses(categoryGroups)
+    getPostingMonthsBudgeted(getRegularExpenses(categoryGroups))
   );
 
   const [monthsAhead, setMonthsAhead] = useState(
@@ -99,231 +103,6 @@ function useRegularExpenses(widgetProps: WidgetProps) {
       },
     });
 
-  const [monthMapCategory, setMonthMapCategory] = useState(
-    new Map<string, PostingMonth[]>()
-  );
-  const [monthMapGroup, setMonthMapGroup] = useState(
-    new Map<string, PostingMonth[]>()
-  );
-
-  const startResetProgress = () => {
-    const amtAvailable = getTotalAvailableInBudget(budget as Budget);
-    // console.log("TOTAL AMOUNT AVAILABLE: " + amtAvailable);
-
-    setBudgetAmounts({
-      totalAvailable: amtAvailable,
-      amountUsed: 0,
-      amountRemaining: amtAvailable,
-    });
-
-    hierarchyTableData.setListData(createList2());
-    monthMapCategory.forEach((v, k) => {
-      monthMapCategory.set(k, []);
-    });
-    monthMapGroup.forEach((v, k) => {
-      monthMapGroup.set(k, []);
-    });
-    // monthMapGroup.clear();
-    // monthMapCategory.clear();
-
-    // // Set all of the categories to have 0 months ahead when resetting progress.
-    // setRegularExpenseDetails({
-    //   ...regularExpenseDetails,
-    //   regularExpenses: regularExpenseDetails.regularExpenses.map((re) => {
-    //     return {
-    //       ...re,
-    //       totalSaved: 0,
-    //       categories: re.categories.map((c: RegularExpenseCategory) => {
-    //         return {
-    //           ...c,
-    //           totalSaved: 0,
-    //           monthsAhead: 0,
-    //           savedAmounts: [],
-    //         };
-    //       }),
-    //     };
-    //   }),
-    //   numExpensesWithTargetMet: 0,
-    // });
-
-    setPostingDetails({ ...postingDetails, status: "prep" });
-  };
-
-  const undoResetProgress = () => {
-    setPostingDetails({ ...postingDetails, status: null });
-  };
-
-  const postCategoryAmountsToBudget = async () => {
-    setPostingDetails({ ...postingDetails, status: "posting" });
-
-    console.log("Regular Expenses for posting", regularExpenses);
-
-    monthMapCategory.forEach(async (v, k) => {
-      const catID = k;
-      const months = v;
-
-      months.forEach(async (v) => {
-        // Loop through each of the new regular expenses, based on the user's
-        // newly entered months ahead for each category, and post the amounts
-        // to the user's actual budget
-        await updateBudgetCategoryAmount({
-          userID: userData?.userID as string,
-          budgetID: userData?.budgetID as string,
-          categoryID: catID.toLowerCase(),
-          month: v.month,
-          newBudgetedAmount: v.amount,
-        });
-      });
-    });
-
-    // setRegularExpenseDetails({
-    //   ...regularExpenseDetails,
-    //   regularExpenses: newRegExpenses,
-    //   amountsPerMonth: getMonthAmounts(newRegExpenses),
-    //   totalSaved: newRegExpenses.reduce((prev, curr) => {
-    //     return prev + curr.totalSaved;
-    //   }, 0),
-    //   numExpensesWithTargetMet: numExpensesMetTarget,
-    // });
-
-    setPostingDetails({ ...postingDetails, status: null });
-  };
-
-  const updateMonthsAheadForCategory = (
-    categoryID: string,
-    increment: boolean
-  ) => {
-    let currMonths = monthMapCategory.get(categoryID) || [];
-    const group = find(regularExpenses, (cg) =>
-      cg.categories.some(
-        (c) => c.categoryID.toLowerCase() == categoryID.toLowerCase()
-      )
-    );
-    const category = find(
-      group.categories,
-      (c) => c.categoryID.toLowerCase() == categoryID.toLowerCase()
-    );
-    const calculated = getPostingMonths(
-      category,
-      budget?.months as BudgetMonth[],
-      userData?.payFrequency as PayFrequency,
-      userData?.nextPaydate as string,
-      currMonths.length + 1
-    );
-    log("increment/decrement", {
-      increment,
-      monthMapCategory,
-      monthMapGroup,
-      calculated,
-    });
-
-    if (currMonths.length == 0 && !increment) return;
-
-    if (increment) {
-      currMonths = [...calculated];
-    } else {
-      currMonths.splice(currMonths.length - 1, 1);
-    }
-
-    monthMapCategory.set(categoryID, currMonths);
-
-    let newGroupMonths: any = {};
-    monthMapCategory.forEach((v, k) => {
-      const catID = k;
-      const months = v;
-
-      months.forEach((m) => {
-        if (!Object.keys(newGroupMonths).includes(m.month)) {
-          newGroupMonths[m.month] = 0;
-        }
-        newGroupMonths[m.month] += m.amount;
-      });
-    });
-
-    const keys = Object.keys(newGroupMonths);
-    const newGroupPostingMonths = keys.map((k) => {
-      return {
-        amount: newGroupMonths[k],
-        month: k.substring(0, 10),
-        percent: 0,
-      } as PostingMonth;
-    });
-    log("newGroupMonths", newGroupPostingMonths);
-    monthMapGroup.set(group.groupID, newGroupPostingMonths);
-
-    hierarchyTableData.setListData(createList2());
-
-    // let newBudgetAmounts = { ...budgetAmounts };
-    // let newRegExpenses = [...regularExpenseDetails.regularExpenses];
-    // let groupIdx = newRegExpenses.findIndex((g) =>
-    //   g.categories.find((c) => c.categoryID == category.categoryID)
-    // );
-    // let grp = newRegExpenses[groupIdx];
-    // let newCategories = [...grp.categories];
-    // let catIdx = newCategories.findIndex(
-    //   (c) => c.categoryID == category.categoryID
-    // );
-    // let newSavedAmounts = [...newCategories[catIdx].savedAmounts];
-    // if (!increment && newSavedAmounts.length == 0) {
-    //   return;
-    // }
-    // let newAmt = 0;
-    // if (!increment) {
-    //   newAmt = -newSavedAmounts[newSavedAmounts.length - 1].amount;
-    //   newSavedAmounts = newSavedAmounts.slice(0, newSavedAmounts.length - 1);
-    // } else {
-    //   let dtMonth = new Date();
-    //   if (
-    //     newSavedAmounts.length == 0 &&
-    //     (category.regularExpenseDetails.multipleTransactions ||
-    //       (!category.regularExpenseDetails.multipleTransactions &&
-    //         category.budgetAmounts.activity == 0))
-    //   ) {
-    //     dtMonth = parseDate();
-    //     dtMonth = getFirstOfMonth(dtMonth);
-    //   } else {
-    //     // Get the last month entered, and add one month to it
-    //     let lastMonth = "";
-    //     if (newSavedAmounts.length > 0) {
-    //       lastMonth = newSavedAmounts[newSavedAmounts.length - 1].month;
-    //     } else {
-    //       lastMonth = getFirstOfMonth(parseDate(getDate_Today())).toISOString();
-    //     }
-    //     dtMonth = addMonths(parseDate(lastMonth), 1);
-    //     dtMonth = getFirstOfMonth(dtMonth);
-    //   }
-    //   newAmt = getAmountForFutureMonth(category, dtMonth);
-    //   newAmt = addExtraPenny(newAmt);
-    //   // newAmt = category.adjustedAmt;
-    //   newSavedAmounts.push({
-    //     month: dtMonth.toISOString(),
-    //     amount: newAmt,
-    //     percentAmount: 0,
-    //   });
-    // }
-    // newBudgetAmounts.amountUsed += newAmt;
-    // newBudgetAmounts.amountRemaining -= newAmt;
-    // newCategories[catIdx] = {
-    //   ...newCategories[catIdx],
-    //   savedAmounts: newSavedAmounts,
-    //   totalSaved: newCategories[catIdx].totalSaved + newAmt,
-    //   monthsAhead: newSavedAmounts.filter(
-    //     (pm) =>
-    //       pm.month !== getFirstOfMonth(parseDate(getDate_Today())).toISOString()
-    //   ).length,
-    // };
-    // newRegExpenses[groupIdx] = {
-    //   ...newRegExpenses[groupIdx],
-    //   categories: newCategories,
-    //   totalSaved: newRegExpenses[groupIdx].totalSaved + newAmt,
-    // };
-    // setRegularExpenseDetails({
-    //   ...regularExpenseDetails,
-    //   regularExpenses: newRegExpenses,
-    // });
-    // setBudgetAmounts(newBudgetAmounts);
-  };
-
   const updateMonthsAheadTarget = async (newTarget: number) => {
     widgetProps.setOnSaveFn(async () => {
       widgetProps.setModalIsSaving(true);
@@ -335,62 +114,385 @@ function useRegularExpenses(widgetProps: WidgetProps) {
 
       setMonthsAhead(newTarget);
     });
+  };
 
-    // const numExpensesMetTarget = regularExpenseDetails.regularExpenses.reduce(
-    //   (prev1, re) => {
-    //     return (
-    //       prev1 +
-    //       re.categories.reduce((prev, c: RegularExpenseCategory) => {
-    //         const newSavedAmounts = [
-    //           ...c.savedAmounts.filter(
-    //             (pm) =>
-    //               pm.month !==
-    //               getFirstOfMonth(parseDate(getDate_Today())).toISOString()
-    //           ),
-    //         ];
-    //         if (newSavedAmounts.length >= newTarget) {
-    //           return prev + 1;
-    //         }
+  const resetRegularExpenses = (newRegularExpenses: CategoryGroup[]) => {
+    setRegularExpenses(newRegularExpenses);
+    hierarchyTableData.setListData(createList(newRegularExpenses));
+  };
 
-    //         return prev;
-    //       }, 0)
-    //     );
-    //   },
-    //   0
+  const startResetProgress = () => {
+    setPostingDetails({ ...postingDetails, status: "prep" });
+
+    const amtAvailable = getTotalAvailableInBudget(budget as Budget);
+
+    setBudgetAmounts({
+      totalAvailable: amtAvailable,
+      amountUsed: 0,
+      amountRemaining: amtAvailable,
+    });
+
+    const newRegularExpenses = getPostingMonthsEmpty(regularExpenses);
+    resetRegularExpenses(newRegularExpenses);
+  };
+
+  const undoResetProgress = () => {
+    setPostingDetails({ ...postingDetails, status: null });
+
+    resetRegularExpenses(
+      getPostingMonthsBudgeted(getRegularExpenses(categoryGroups))
+    );
+  };
+
+  const postCategoryAmountsToBudget = async () => {
+    setPostingDetails((prev) => {
+      return {
+        status: "posting",
+        category: prev.category,
+        progress: prev.progress,
+      };
+    });
+
+    console.log("Regular Expenses for posting", regularExpenses);
+
+    const categoriesToPost = getAllCategories(regularExpenses, false);
+    const numMonthsToPost = categoriesToPost.reduce((prev, curr) => {
+      return [...prev, ...curr.postingMonths];
+    }, [] as PostingMonth[]).length;
+
+    type NewPostingMonth = PostingMonth & {
+      categoryName: string;
+      categoryID: string;
+    };
+
+    let newMonths: NewPostingMonth[] = [];
+    const budgetMonths = (budget as Budget).months;
+    for (let i = 0; i < budgetMonths.length; i++) {
+      const bm = budgetMonths[i];
+
+      const monthTotalAvailable = sum(bm.groups, "available");
+      if (monthTotalAvailable > 0) {
+        for (let j = 0; j < bm.groups.length; j++) {
+          const budGroup = bm.groups[j];
+
+          if (budGroup.available > 0) {
+            for (let k = 0; k < budGroup.categories.length; k++) {
+              const budCat = budGroup.categories[k];
+
+              if (i == 0 && budCat.available > 0) {
+                newMonths.push({
+                  month: bm.month,
+                  amount: -budCat.available + budCat.budgeted,
+                  percent: 0,
+                  categoryID: budCat.categoryID,
+                  categoryName: budCat.name,
+                });
+              } else if (i != 0 && budCat.budgeted > 0) {
+                newMonths.push({
+                  month: bm.month,
+                  amount: 0,
+                  percent: 0,
+                  categoryID: budCat.categoryID,
+                  categoryName: budCat.name,
+                });
+              }
+            }
+          }
+        }
+      }
+    }
+
+    log("newMonths?", { newMonths });
+
+    for (let j = 0; j < newMonths.length; j++) {
+      const pm = newMonths[j];
+
+      setPostingDetails((prev) => {
+        return {
+          status: "posting",
+          category: {
+            categoryName: pm.categoryName,
+            amount: pm.amount < 0 ? 0 : pm.amount,
+            month: pm.month,
+          },
+          progress: j / (newMonths.length + numMonthsToPost),
+        };
+      });
+      await sleep(1500);
+
+      // Loop through each of the new regular expenses, based on the user's
+      // newly entered months ahead for each category, and post the amounts
+      // to the user's actual budget
+      await updateBudgetCategoryAmount({
+        userID: userData?.userID as string,
+        budgetID: userData?.budgetID as string,
+        categoryID: pm.categoryID.toLowerCase(),
+        month: pm.month,
+        newBudgetedAmount: pm.amount,
+      });
+    }
+
+    // // TODO: We need to empty out the budget amounts for all other categories,
+    // //       even if the user didn't select them, so that the rest of the money
+    // //       still ends up in the "To Be Assigned" section in the user's budget
+
+    let idx = -1;
+    for (let i = 0; i < categoriesToPost.length; i++) {
+      for (let j = 0; j < categoriesToPost[i].postingMonths.length; j++) {
+        const pm = categoriesToPost[i].postingMonths[j];
+        idx += 1;
+
+        setPostingDetails((prev) => {
+          return {
+            status: "posting",
+            category: {
+              categoryName: categoriesToPost[i].name,
+              amount: pm.amount,
+              month: pm.month,
+            },
+            progress:
+              (newMonths.length + idx) / (newMonths.length + numMonthsToPost),
+          };
+        });
+
+        await sleep(1500);
+        // Loop through each of the new regular expenses, based on the user's
+        // newly entered months ahead for each category, and post the amounts
+        // to the user's actual budget
+        await updateBudgetCategoryAmount({
+          userID: userData?.userID as string,
+          budgetID: userData?.budgetID as string,
+          categoryID: categoriesToPost[i].categoryID.toLowerCase(),
+          month: pm.month,
+          newBudgetedAmount: pm.amount,
+        });
+      }
+    }
+
+    // reload all evercent data when finished posting new amounts
+    // to user's budget
+    await queryClient.invalidateQueries(["get-all-evercent-data"]);
+
+    setPostingDetails((prev) => {
+      return {
+        status: null,
+        category: {
+          amount: null,
+          categoryName: null,
+          month: null,
+        },
+        progress: 0,
+      };
+    });
+  };
+
+  // Once the "postCategoryAmountsToBudget" (above) is completed, the
+  // query containing all the evercent data will be invalidated, so we'll
+  // reload our regular expenses when we recognize a change in that list
+  // of category groups
+  useEffect(() => {
+    const newRegularExpenses = getPostingMonthsBudgeted(
+      getRegularExpenses(categoryGroups)
+    );
+    resetRegularExpenses(newRegularExpenses);
+  }, [categoryGroups]);
+
+  const updateMonthsAheadForCategory = (
+    category: Category,
+    increment: boolean
+  ) => {
+    let currMonths = category.postingMonths;
+    if (currMonths.length == 0 && !increment) return;
+
+    let calculated = getPostingMonths(
+      category,
+      budget?.months as BudgetMonth[],
+      userData?.payFrequency as PayFrequency,
+      userData?.nextPaydate as string,
+      currMonths.length + 1
+    );
+    log("increment/decrement", {
+      increment,
+      calculated,
+    });
+
+    // const bm = getBudgetMonth(budget?.months as BudgetMonth[], new Date());
+    // const bc = getBudgetCategory(
+    //   bm,
+    //   category.categoryGroupID,
+    //   category.categoryID
     // );
 
-    // setRegularExpenseDetails({
-    //   ...regularExpenseDetails,
-    //   numExpensesWithTargetMet: numExpensesMetTarget,
-    // });
+    let month: PostingMonth;
+    if (increment) {
+      // if (currMonths.length == 0) {
+      //   if (
+      //     !category.regularExpenseDetails?.multipleTransactions &&
+      //     bc.activity <= 0
+      //   ) {
+      //     currMonths.push(calculated[1]);
+      //   } else {
+      //     currMonths.push(calculated[0]);
+      //   }
+      // } else {
+      // }
+      currMonths.push(calculated[calculated.length - 1]);
+      month = currMonths[currMonths.length - 1];
+    } else {
+      month = currMonths.splice(currMonths.length - 1, 1)[0];
+    }
+
+    const newRemaining =
+      budgetAmounts.amountRemaining +
+      (increment ? -month.amount : month.amount);
+    if (newRemaining < 0) return;
+
+    setBudgetAmounts((prev) => {
+      return {
+        totalAvailable: prev.totalAvailable,
+        amountUsed:
+          prev.amountUsed + (increment ? month.amount : -month.amount),
+        amountRemaining:
+          prev.amountRemaining + (increment ? -month.amount : month.amount),
+      };
+    });
+
+    const newRegularExpenses = getPostingMonthsNew(
+      regularExpenses,
+      category,
+      currMonths,
+      increment
+    );
+    //setRegularExpenses(newRegularExpenses);
+    resetRegularExpenses(newRegularExpenses);
   };
 
-  const getPostingMonthsForGroup = (groupID: string) => {
+  const getPostingMonthsForGroup = (grp: CategoryGroup) => {
     // log("getting post amounts for group", { groupID, postingDetails });
-    if (postingDetails.status != "prep") {
-      return getTotalBudgetedByMonthRegular(
-        regularExpenses,
-        budget as Budget,
-        groupID
-      );
-    } else {
-      return monthMapGroup.get(groupID) || [];
-    }
+    const monthData = grp.categories.reduce((prev, curr) => {
+      const catPostMonths = curr.postingMonths;
+      catPostMonths.forEach((pm) => {
+        if (!Object.keys(prev).includes(pm.month)) {
+          prev[pm.month] = 0;
+        }
+        prev[pm.month] += pm.amount;
+      });
+      return prev;
+    }, {} as { [key: string]: number });
+    const sortedKeys = Object.keys(monthData).sort(
+      (a, b) => new Date(a).getTime() - new Date(b).getTime()
+    );
+    return sortedKeys.map((key) => {
+      return {
+        month: key,
+        amount: monthData[key],
+        percent: 0,
+      } as PostingMonth;
+    });
   };
 
-  const getPostingMonthsForCategory = (groupID: string, categoryID: string) => {
-    // log("getting post amounts for category", { categoryID, postingDetails });
-    if (postingDetails.status != "prep") {
-      return getTotalBudgetedByMonthRegular(
-        regularExpenses,
-        budget as Budget,
-        groupID,
-        categoryID
-      );
-    } else {
-      return monthMapCategory.get(categoryID) || [];
-    }
+  const getPostingMonthsForCategory = (category: Category) => {
+    let monthData: { [key: string]: number } = {};
+    const catPostMonths = category.postingMonths;
+    catPostMonths.forEach((pm) => {
+      if (!Object.keys(monthData).includes(pm.month)) {
+        monthData[pm.month] = 0;
+      }
+      monthData[pm.month] += pm.amount;
+    });
+    const sortedKeys = Object.keys(monthData).sort(
+      (a, b) => new Date(a).getTime() - new Date(b).getTime()
+    );
+    return sortedKeys.map((key) => {
+      return {
+        month: key,
+        amount: monthData[key],
+        percent: 0,
+      } as PostingMonth;
+    });
   };
+
+  function getPostingMonthsNew(
+    regularExpenses: CategoryGroup[],
+    category: Category,
+    newPostingMonths: PostingMonth[],
+    increment: boolean
+  ): CategoryGroup[] {
+    return regularExpenses.map((cg) => {
+      const newCategories = cg.categories.map((c) => {
+        if (c.categoryID.toLowerCase() != category.categoryID.toLowerCase()) {
+          return c;
+        }
+        return {
+          ...c,
+          monthsAhead: c.monthsAhead + (increment ? 1 : -1),
+          postingMonths: newPostingMonths,
+        };
+      });
+      return {
+        ...cg,
+        categories: newCategories,
+      };
+    });
+  }
+
+  function getPostingMonthsBudgeted(
+    regularExpenses: CategoryGroup[]
+  ): CategoryGroup[] {
+    return regularExpenses.map((cg, i, arr) => {
+      return {
+        ...cg,
+        categories: cg.categories.map((c) => {
+          return {
+            ...c,
+            // monthsAhead: calculatemon
+            postingMonths: getTotalBudgetedByMonthRegular(
+              arr,
+              budget as Budget,
+              cg.groupID,
+              c.categoryID
+            ),
+          };
+        }),
+      };
+    });
+  }
+
+  function getPostingMonthsEmpty(
+    regularExpenses: CategoryGroup[]
+  ): CategoryGroup[] {
+    return regularExpenses.map((cg, i, arr) => {
+      return {
+        ...cg,
+        categories: cg.categories.map((c) => {
+          return {
+            ...c,
+            monthsAhead: 0,
+            postingMonths: [],
+          };
+        }),
+      };
+    });
+  }
+
+  const getAllExpandedGroups = () => {
+    return getDistinctValues(regularExpenses, "groupID");
+  };
+
+  const getAllExpandedCategories = () => {
+    return [
+      ...new Set(
+        regularExpenses.reduce((prev, curr) => {
+          return [...prev, ...getDistinctValues(curr.categories, "categoryID")];
+        }, [] as string[])
+      ),
+    ];
+  };
+
+  const [expandedGroups, setExpandedGroups] = useState(getAllExpandedGroups());
+  const [expandedCategories, setExpandedCategories] = useState(
+    getAllExpandedCategories()
+  );
 
   const createList = (data: any) => {
     const regExpenses: CategoryGroup[] = data;
@@ -402,7 +504,8 @@ function useRegularExpenses(widgetProps: WidgetProps) {
         parentId: "",
         id: grp.groupID,
         name: grp.groupName,
-        expanded: true,
+        data: grp,
+        expanded: expandedGroups.includes(grp.groupID),
       });
 
       for (let j = 0; j < grp.categories.length; j++) {
@@ -411,18 +514,17 @@ function useRegularExpenses(widgetProps: WidgetProps) {
           parentId: grp.groupID,
           id: cat.categoryID,
           name: cat.name,
-          expanded: true,
+          data: cat,
+          expanded: expandedCategories.includes(cat.categoryID),
         });
 
-        const amountsSaved = getPostingMonthsForCategory(
-          grp.groupID,
-          cat.categoryID
-        );
+        const amountsSaved = cat.postingMonths;
         for (let k = 0; k < amountsSaved.length; k++) {
           list.push({
             parentId: cat.categoryID,
             id: amountsSaved[k].month,
             name: amountsSaved[k].month,
+            data: amountsSaved[k],
           });
         }
       }
@@ -431,81 +533,20 @@ function useRegularExpenses(widgetProps: WidgetProps) {
     return list;
   };
 
-  const createList2 = () => {
-    const list: CheckboxItem[] = [];
-
-    for (let i = 0; i < regularExpenses.length; i++) {
-      const grp = regularExpenses[i];
-      list.push({
-        parentId: "",
-        id: grp.groupID,
-        name: grp.groupName,
-        expanded: true,
-      });
-
-      for (let j = 0; j < grp.categories.length; j++) {
-        const cat = grp.categories[j];
-        list.push({
-          parentId: grp.groupID,
-          id: cat.categoryID,
-          name: cat.name,
-          expanded: true,
-        });
-
-        // const amountsSaved = getPostingMonthsForCategory(
-        //   grp.groupID,
-        //   cat.categoryID
-        // );
-        // for (let k = 0; k < amountsSaved.length; k++) {
-        //   list.push({
-        //     parentId: cat.categoryID,
-        //     id: amountsSaved[k].month,
-        //     name: amountsSaved[k].month,
-        //   });
-        // }
-      }
-    }
-
-    return list;
-  };
-
-  useEffect(() => {
-    if (postingDetails.status == null) {
-      regularExpenses.forEach((cg) => {
-        cg.categories.forEach((c) => {
-          monthMapCategory.set(
-            c.categoryID,
-            getTotalBudgetedByMonthRegular(
-              regularExpenses,
-              budget as Budget,
-              cg.groupID,
-              c.categoryID
-            )
-          );
-        });
-
-        monthMapGroup.set(
-          cg.groupID,
-          getTotalBudgetedByMonthRegular(
-            regularExpenses,
-            budget as Budget,
-            cg.groupID
-          )
-        );
-      });
-
-      hierarchyTableData.setListData(createList(regularExpenses));
-    }
-  }, [postingDetails.status]);
-
-  const hierarchyTableData = useHierarchyTable(regularExpenses, createList);
-  log("maps", { monthMapCategory, monthMapGroup });
+  const hierarchyTableData = useHierarchyTable(
+    getPostingMonthsBudgeted(regularExpenses),
+    createList
+  );
+  // log("maps", { monthMapCategory, monthMapGroup });
 
   return {
     regularExpenses,
     budgetAmounts,
     budgetAvailableAmountTotal: getTotalAvailableInBudget(budget as Budget),
-    totalBudgetedByMonth: getTotalBudgetedByMonth(budget as Budget),
+    totalBudgetedByMonth: getTotalBudgetedByMonth(
+      budget as Budget,
+      regularExpenses
+    ),
     monthsAhead,
     updateMonthsAhead: updateMonthsAheadTarget,
     postingDetails,
@@ -514,6 +555,8 @@ function useRegularExpenses(widgetProps: WidgetProps) {
     postCategoryAmountsToBudget,
     updateMonthsAheadForCategory,
     regularExpensesTableData: hierarchyTableData,
+    setExpandedGroups,
+    setExpandedCategories,
     getPostingMonthsForGroup,
     getPostingMonthsForCategory,
   } as RegularExpensesState;
