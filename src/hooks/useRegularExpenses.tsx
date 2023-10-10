@@ -317,13 +317,6 @@ function useRegularExpenses(widgetProps: WidgetProps) {
       calculated,
     });
 
-    // const bm = getBudgetMonth(budget?.months as BudgetMonth[], new Date());
-    // const bc = getBudgetCategory(
-    //   bm,
-    //   category.categoryGroupID,
-    //   category.categoryID
-    // );
-
     let month: PostingMonth;
     if (increment) {
       if (
@@ -334,36 +327,11 @@ function useRegularExpenses(widgetProps: WidgetProps) {
         return;
       }
 
-      // if (currMonths.length == 0) {
-      //   if (
-      //     !category.regularExpenseDetails?.multipleTransactions &&
-      //     bc.activity <= 0
-      //   ) {
-      //     currMonths.push(calculated[1]);
-      //   } else {
-      //     currMonths.push(calculated[0]);
-      //   }
-      // } else {
-      // }
       currMonths.push(calculated[calculated.length - 1]);
       month = currMonths[currMonths.length - 1];
     } else {
-      if (
-        budgetAmounts.amountRemaining +
-          calculated[calculated.length - 1].amount <
-        0
-      ) {
-        return;
-      }
-
       month = currMonths.splice(currMonths.length - 1, 1)[0];
     }
-
-    const newRemaining =
-      budgetAmounts.amountRemaining +
-      (increment ? -month.amount : month.amount);
-    log("new remaining?", newRemaining);
-    if (newRemaining < 0) return;
 
     setBudgetAmounts((prev) => {
       return {
@@ -381,7 +349,6 @@ function useRegularExpenses(widgetProps: WidgetProps) {
       currMonths,
       increment
     );
-    //setRegularExpenses(newRegularExpenses);
     resetRegularExpenses(newRegularExpenses);
   };
 
