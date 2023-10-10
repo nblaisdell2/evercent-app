@@ -18,6 +18,8 @@ function AutomationOverview({ baProps }: { baProps: BudgetAutomationState }) {
       : baProps.selectedPastRun) as AutoRun
   );
 
+  log("months", { months });
+
   return (
     <div className="flex flex-col h-full space-y-2">
       <Card className="flex flex-col items-center flex-grow p-2 overflow-y-auto">

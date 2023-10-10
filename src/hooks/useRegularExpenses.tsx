@@ -326,6 +326,14 @@ function useRegularExpenses(widgetProps: WidgetProps) {
 
     let month: PostingMonth;
     if (increment) {
+      if (
+        budgetAmounts.amountRemaining -
+          calculated[calculated.length - 1].amount <
+        0
+      ) {
+        return;
+      }
+
       // if (currMonths.length == 0) {
       //   if (
       //     !category.regularExpenseDetails?.multipleTransactions &&
@@ -340,12 +348,21 @@ function useRegularExpenses(widgetProps: WidgetProps) {
       currMonths.push(calculated[calculated.length - 1]);
       month = currMonths[currMonths.length - 1];
     } else {
+      if (
+        budgetAmounts.amountRemaining +
+          calculated[calculated.length - 1].amount <
+        0
+      ) {
+        return;
+      }
+
       month = currMonths.splice(currMonths.length - 1, 1)[0];
     }
 
     const newRemaining =
       budgetAmounts.amountRemaining +
       (increment ? -month.amount : month.amount);
+    log("new remaining?", newRemaining);
     if (newRemaining < 0) return;
 
     setBudgetAmounts((prev) => {
@@ -395,6 +412,7 @@ function useRegularExpenses(widgetProps: WidgetProps) {
   const getPostingMonthsForCategory = (category: Category) => {
     let monthData: { [key: string]: number } = {};
     const catPostMonths = category.postingMonths;
+    if (category.name == "Groceries") log({ catPostMonths });
     catPostMonths.forEach((pm) => {
       if (!Object.keys(monthData).includes(pm.month)) {
         monthData[pm.month] = 0;
@@ -419,6 +437,7 @@ function useRegularExpenses(widgetProps: WidgetProps) {
     newPostingMonths: PostingMonth[],
     increment: boolean
   ): CategoryGroup[] {
+    log("getting new posting months");
     return regularExpenses.map((cg) => {
       const newCategories = cg.categories.map((c) => {
         if (c.categoryID.toLowerCase() != category.categoryID.toLowerCase()) {
@@ -535,7 +554,7 @@ function useRegularExpenses(widgetProps: WidgetProps) {
   };
 
   const hierarchyTableData = useHierarchyTable(
-    [], //getPostingMonthsBudgeted(regularExpenses),
+    getPostingMonthsBudgeted(regularExpenses),
     createList
   );
   // log("maps", { monthMapCategory, monthMapGroup });

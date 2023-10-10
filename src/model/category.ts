@@ -340,7 +340,7 @@ export const getPostingMonths = (
   nextPaydate: string,
   overrideNum?: number | undefined
 ): PostingMonth[] => {
-  const DEBUG = category.name == "YNAB";
+  const DEBUG = category.name == "AWS";
 
   if (DEBUG) log("category", { category, payFreq, nextPaydate, overrideNum });
 
@@ -394,7 +394,7 @@ export const getPostingMonths = (
       if (DEBUG) log("desiredPostAmt", { desiredPostAmt });
 
       if (
-        useOverride &&
+        // useOverride &&
         isEqual(parseISO(bm.month), startOfMonth(new Date())) &&
         !category.regularExpenseDetails?.multipleTransactions &&
         bc.activity < 0

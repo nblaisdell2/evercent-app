@@ -134,9 +134,10 @@ export const getAutoRunPostingMonths = (autoRun: AutoRun) => {
     for (let j = 0; j < months.length; j++) {
       const currMonth = months[j];
       if (currMonth.included || currMonth.amountPosted != undefined) {
-        if (!newMonths.has(currMonth.postingMonth)) {
-          newMonths.set(currMonth.postingMonth, {
-            month: currMonth.postingMonth.substring(0, 10),
+        const monthStr = currMonth.postingMonth.substring(0, 10);
+        if (!newMonths.has(monthStr)) {
+          newMonths.set(monthStr, {
+            month: monthStr,
             amount: 0,
             percent: 0,
           });
@@ -147,8 +148,7 @@ export const getAutoRunPostingMonths = (autoRun: AutoRun) => {
             ? currMonth.amountPosted
             : currMonth.amountToPost;
         total += amtToAdd;
-        (newMonths.get(currMonth.postingMonth) as PostingMonth).amount +=
-          amtToAdd;
+        (newMonths.get(monthStr) as PostingMonth).amount += amtToAdd;
       }
     }
   }
