@@ -954,7 +954,10 @@ export const calculateUpcomingExpense = (
   nextPaydate: string
 ): UpcomingExpenseDetails | null => {
   if (!isUpcomingExpense(category)) return null;
-  const totalAmt = category.upcomingDetails?.expenseAmount || 0;
+  const totalAmt =
+    category.adjustedAmountPlusExtra > 0
+      ? category.upcomingDetails?.expenseAmount || 0
+      : 0;
   const bc = getBudgetCategory(
     getBudgetMonth(budget.months, new Date()),
     category.categoryGroupID,
@@ -980,13 +983,13 @@ export const calculateUpcomingExpense = (
     payFrequency
   );
 
-  // log("  ", { neededToSave, amtSavedPerPaycheck, availableAmt });
+  log("  ", { neededToSave, amtSavedPerPaycheck, availableAmt });
 
   const numPaychecks = Math.ceil(neededToSave / amtSavedPerPaycheck);
   const dtCurrPaydate = parseISO(nextPaydate);
   const todayIsPayday = isSameDay(dtCurrPaydate, new Date());
 
-  // log("  ", { numPaychecks, dtCurrPaydate });
+  log("  ", { numPaychecks, dtCurrPaydate });
   let dtUpcomingPaydate = new Date();
   if (payFrequency == "Weekly") {
     dtUpcomingPaydate = addWeeks(
@@ -1005,11 +1008,11 @@ export const calculateUpcomingExpense = (
     );
   }
 
-  // log("  ", { dtUpcomingPaydate });
+  log("  ", { dtUpcomingPaydate });
 
   const daysAway = differenceInDays(dtUpcomingPaydate, new Date());
 
-  // log("  ", { daysAway });
+  log("  ", { daysAway });
   return {
     guid: category.guid,
     categoryName: category.name,
