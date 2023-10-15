@@ -69,6 +69,7 @@ export const updateCachedCategories = (
     | {
         newCategories: CategoryGroup[];
         excludedCategories: ExcludedCategory[];
+        newAutoRuns: AutoRun[];
       }
     | undefined
 ) => {
@@ -78,6 +79,7 @@ export const updateCachedCategories = (
       ...old,
       categoryGroups: [...newData.newCategories],
       excludedCategories: [...newData.excludedCategories],
+      autoRuns: [...newData.newAutoRuns],
     };
   }
 };

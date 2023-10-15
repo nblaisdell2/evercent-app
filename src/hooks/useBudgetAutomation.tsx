@@ -6,6 +6,7 @@ import {
   AutoRunCategory,
   AutoRunCategoryGroup,
   generateAutoRunCategoryGroups,
+  getValidAutoRuns,
 } from "../model/autoRun";
 import { CheckboxItem } from "../components/elements/HierarchyTable";
 import { log } from "../utils/log";
@@ -48,7 +49,9 @@ function useBudgetAutomation(widgetProps: WidgetProps) {
   } = useEvercent();
 
   const [showUpcoming, setShowUpcoming] = useState(true);
-  const [autoRunsList, setAutoRunsList] = useState<AutoRun[]>(autoRuns);
+  const [autoRunsList, setAutoRunsList] = useState<AutoRun[]>(
+    getValidAutoRuns(autoRuns)
+  );
   const [selectedPastRun, setSelectedPastRun] = useState<AutoRun>();
   const [selectedPastRunCategory, setSelectedPastRunCategory] =
     useState<AutoRunCategory>();

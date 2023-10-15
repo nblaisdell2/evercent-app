@@ -26,6 +26,7 @@ export type AutoRunCategory = {
   categoryAdjustedAmount: number;
   categoryAdjustedAmountPerPaycheck: number;
   postingMonths: AutoRunCategoryMonth[];
+  included: boolean;
 };
 
 export type AutoRunCategoryMonth = {
@@ -129,6 +130,8 @@ export const getAutoRunPostingMonths = (autoRun: AutoRun) => {
   const newMonths = new Map<string, PostingMonth>();
   let total = 0;
   for (let i = 0; i < categories.length; i++) {
+    if (!categories[i].included) continue;
+
     const months = categories[i].postingMonths;
 
     for (let j = 0; j < months.length; j++) {
@@ -167,7 +170,20 @@ export const getAutoRunPostingMonths = (autoRun: AutoRun) => {
   return newPostingMonths;
 };
 
+export const getValidAutoRuns = (autoRuns: AutoRun[]) => {
+  return autoRuns.reduce((prev, curr) => {
+    const newGroups = curr.categoryGroups.filter((cg) =>
+      cg.categories.some((c) => c.included)
+    );
+    if (newGroups.length > 0) {
+      return [...prev, { ...curr, categoryGroups: newGroups }];
+    }
+    return prev;
+  }, [] as AutoRun[]);
+};
+
 export const getAutoRunCategoryTotal = (autoRunCategory: AutoRunCategory) => {
+  if (!autoRunCategory.included) return 0;
   return autoRunCategory.postingMonths.reduce((prev, curr) => {
     if (!curr.included) return prev;
     return prev + (curr.amountPosted ? curr.amountPosted : curr.amountToPost);
@@ -239,6 +255,10 @@ export const generateAutoRunCategoryGroups = (
             payFreq
           ),
           postingMonths: returnPostingMonths,
+          included:
+            currCategory.regularExpenseDetails == null
+              ? true
+              : currCategory.regularExpenseDetails.includeOnChart,
         });
       }
     }

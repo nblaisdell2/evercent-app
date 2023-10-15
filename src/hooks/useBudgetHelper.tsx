@@ -18,6 +18,7 @@ import { Budget, BudgetMonth, getBudgetMonth } from "../model/budget";
 import { PayFrequency, UserData } from "../model/userData";
 import { WidgetProps } from "../components/MainContent";
 import useEvercent from "./useEvercent";
+import { updateCachedAutoRuns } from "../model/evercent";
 
 export type BudgetHelperState = {
   monthlyIncome: number;
@@ -258,8 +259,7 @@ function useBudgetHelper(widgetProps: WidgetProps) {
 
     // save the category list results to the database
     await updateCategories({
-      userID: userData?.userID as string,
-      budgetID: userData?.budgetID as string,
+      userData: userData as UserData,
       newCategories: categoryList as CategoryGroup[],
       excludedCategories: excludedList as ExcludedCategory[],
     });

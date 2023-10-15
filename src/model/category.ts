@@ -19,7 +19,17 @@ import {
   getBudgetCategory,
   getBudgetMonth,
 } from "./budget";
-import { PayFrequency, UserData, getAmountByPayFrequency } from "./userData";
+import {
+  PayFrequency,
+  UserData,
+  getAmountByPayFrequency,
+  incrementDateByFrequency,
+} from "./userData";
+import {
+  AutoRun,
+  AutoRunCategoryGroup,
+  generateAutoRunCategoryGroups,
+} from "./autoRun";
 
 export type CategoryGroup = {
   groupID: string;
@@ -145,13 +155,11 @@ const formatCategories = (
 };
 
 export const updateCategoryData = async ({
-  userID,
-  budgetID,
+  userData,
   newCategories,
   excludedCategories,
 }: {
-  userID: string;
-  budgetID: string;
+  userData: UserData;
   newCategories: CategoryGroup[];
   excludedCategories: ExcludedCategory[];
 }) => {
@@ -167,15 +175,46 @@ export const updateCategoryData = async ({
     method: "PUT",
     url: "/user/categoryData",
     params: {
-      UserID: userID,
-      BudgetID: budgetID,
+      UserID: userData.userID,
+      BudgetID: userData.budgetID,
       Details: JSON.stringify(formattedCategories),
     },
   });
 
   log("error & data", { error, data });
   if (error) return Promise.reject(error);
-  return { newCategories, excludedCategories };
+
+  let autoRunList: AutoRun[] = [];
+  let dtRunTime = parseISO(userData.nextPaydate);
+  for (let i = 0; i < 10; i++) {
+    let autoRunGroups: AutoRunCategoryGroup[] = [];
+    if (i == 0) {
+      autoRunGroups = generateAutoRunCategoryGroups(
+        newCategories,
+        userData.payFrequency
+      );
+    }
+
+    if (autoRunList[i]) {
+      autoRunList[i] = {
+        ...autoRunList[i],
+        runID: autoRunList[i].runID,
+        runTime: dtRunTime.toISOString(),
+        isLocked: autoRunList[i].isLocked,
+        categoryGroups: autoRunGroups,
+      };
+    } else {
+      autoRunList.push({
+        runID: generateUUID().toUpperCase(),
+        runTime: dtRunTime.toISOString(),
+        isLocked: false,
+        categoryGroups: autoRunGroups,
+      });
+    }
+    dtRunTime = incrementDateByFrequency(dtRunTime, userData.payFrequency);
+  }
+
+  return { newCategories, excludedCategories, newAutoRuns: autoRunList };
 };
 
 /////////////////////////////////////////

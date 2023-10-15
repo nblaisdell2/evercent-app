@@ -47,6 +47,7 @@ function AmountMonths({ baProps }: { baProps: BudgetAutomationState }) {
 
         for (let j = 0; j < grp.categories.length; j++) {
           const cat = grp.categories[j];
+          if (!cat.included) continue;
 
           list.push({
             parentId: grp.groupID,
