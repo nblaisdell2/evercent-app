@@ -18,7 +18,11 @@ import UpcomingExpensesWidget from "./widgets/upcoming-expenses/UpcomingExpenses
 import UpcomingExpensesFull from "./widgets/upcoming-expenses/UpcomingExpensesFull";
 import BudgetAutomationFull from "./widgets/budget-automation/BudgetAutomationFull";
 import RegularExpensesFull from "./widgets/regular-expenses/RegularExpensesFull";
-import { getRegularExpenses, getUpcomingCategories } from "../model/category";
+import {
+  getAllCategories,
+  getRegularExpenses,
+  getUpcomingCategories,
+} from "../model/category";
 import { PayFrequency } from "../model/userData";
 
 export type WidgetProps = Pick<
@@ -44,7 +48,11 @@ function Widget({
 
   const shouldOpenWidget =
     !isLoading &&
-    (["Budget Helper", "Budget Automation"].includes(name) ||
+    (name == "Budget Helper" ||
+      (name == "Budget Automation" &&
+        getAllCategories(categoryGroups, false).filter(
+          (c) => c.adjustedAmountPlusExtra > 0
+        ).length > 0) ||
       (name == "Regular Expenses" &&
         getRegularExpenses(categoryGroups).length > 0) ||
       (name == "Upcoming Expenses" &&

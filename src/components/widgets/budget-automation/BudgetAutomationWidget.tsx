@@ -15,7 +15,10 @@ import PostingMonthBreakdown from "../../other/PostingMonthBreakdown";
 
 function BudgetAutomationWidget() {
   const { categoryGroups, autoRuns } = useEvercent();
-  const hasCategories = getAllCategories(categoryGroups, false).length > 0;
+  const hasCategories =
+    getAllCategories(categoryGroups, false).filter(
+      (c) => c.adjustedAmountPlusExtra > 0
+    ).length > 0;
 
   if (!hasCategories) {
     return (

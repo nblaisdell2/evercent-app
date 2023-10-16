@@ -8,6 +8,7 @@ import {
 } from "./category";
 import { getAPIResponse } from "../utils/api";
 import { log } from "../utils/log";
+import { addHours, parseISO } from "date-fns";
 
 export type EvercentData = {
   userData: UserData | undefined;
@@ -74,12 +75,24 @@ export const updateCachedCategories = (
     | undefined
 ) => {
   if (old && newData) {
+    const newAutoRuns =
+      old.autoRuns.length == 0
+        ? []
+        : newData.newAutoRuns.map((ar) => {
+            return {
+              ...ar,
+              runTime: addHours(
+                parseISO(ar.runTime),
+                parseISO(old.autoRuns[0].runTime).getHours()
+              ).toISOString(),
+            };
+          });
     log("updating cached categories", { old, newData });
     return {
       ...old,
       categoryGroups: [...newData.newCategories],
       excludedCategories: [...newData.excludedCategories],
-      autoRuns: [...newData.newAutoRuns],
+      autoRuns: newAutoRuns,
     };
   }
 };
