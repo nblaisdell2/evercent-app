@@ -18,7 +18,6 @@ import { Budget, BudgetMonth, getBudgetMonth } from "../model/budget";
 import { PayFrequency, UserData } from "../model/userData";
 import { WidgetProps } from "../components/MainContent";
 import useEvercent from "./useEvercent";
-import { updateCachedAutoRuns } from "../model/evercent";
 
 export type BudgetHelperState = {
   monthlyIncome: number;
@@ -65,6 +64,7 @@ function useBudgetHelper(widgetProps: WidgetProps) {
     categoryGroups,
     categoryGroupsAll,
     excludedCategories,
+    autoRuns,
     updateCategories,
   } = useEvercent();
 
@@ -82,11 +82,15 @@ function useBudgetHelper(widgetProps: WidgetProps) {
     key: "amount" | "extraAmount",
     newAmount: number
   ) => {
+    const nextPaydate =
+      autoRuns.at(0) != undefined
+        ? autoRuns[0].runTime
+        : (userData?.nextPaydate as string);
     const newCategory = updateCategoryAmount(
       budget as Budget,
       category,
       userData?.payFrequency as PayFrequency,
-      userData?.nextPaydate as string,
+      nextPaydate,
       key,
       newAmount
     );
@@ -104,11 +108,15 @@ function useBudgetHelper(widgetProps: WidgetProps) {
       | "multipleTransactions",
     value: any
   ) => {
+    const nextPaydate =
+      autoRuns.at(0) != undefined
+        ? autoRuns[0].runTime
+        : (userData?.nextPaydate as string);
     const newCategory = updateCategoryExpenseDetails(
       budget as Budget,
       category,
       userData?.payFrequency as PayFrequency,
-      userData?.nextPaydate as string,
+      nextPaydate,
       key,
       value
     );
@@ -135,11 +143,15 @@ function useBudgetHelper(widgetProps: WidgetProps) {
     newAmount: number
   ) => {
     if (category.upcomingDetails) {
+      const nextPaydate =
+        autoRuns.at(0) != undefined
+          ? autoRuns[0].runTime
+          : (userData?.nextPaydate as string);
       const newCategory = updateCategoryUpcomingAmount(
         budget as Budget,
         category,
         userData?.payFrequency as PayFrequency,
-        userData?.nextPaydate as string,
+        nextPaydate,
         newAmount
       );
       updateSelectedCategory(newCategory);

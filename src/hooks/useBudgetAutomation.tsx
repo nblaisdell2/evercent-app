@@ -128,6 +128,8 @@ function useBudgetAutomation(widgetProps: WidgetProps) {
   };
 
   const updateToggledAutoRunCategories = (items: CheckboxItem[]) => {
+    if (!showUpcoming) return;
+
     const newList = autoRunsList.map((run) => {
       return {
         ...run,

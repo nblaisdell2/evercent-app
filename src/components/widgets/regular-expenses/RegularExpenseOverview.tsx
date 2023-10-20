@@ -15,6 +15,9 @@ import {
 import { RegularExpensesState } from "../../../hooks/useRegularExpenses";
 import { getPercentString } from "../../../utils/util";
 import MyIcon from "../../elements/MyIcon";
+import useEvercent from "../../../hooks/useEvercent";
+import { Budget } from "../../../model/budget";
+import { UserData } from "../../../model/userData";
 
 function RegularExpenseOverview({
   reProps,
@@ -68,10 +71,14 @@ function RegularExpenseOverview({
     );
   };
 
+  const { userData, budget } = useEvercent();
+
   const numExpenses = getAllCategories(reProps.regularExpenses, false).length;
   const numExpensesWithTargetMet = getNumExpensesWithTargetMet(
     reProps.regularExpenses,
-    reProps.monthsAhead
+    reProps.monthsAhead,
+    budget as Budget,
+    userData as UserData
   );
 
   return (

@@ -90,7 +90,7 @@ function BudgetAutomationWidget() {
             />
           </div>
           {/* right side */}
-          <Card className="flex flex-col overflow-y-hidden p-2">
+          <Card className="flex flex-col overflow-y-hidden p-2 w-[35%]">
             <Label
               label={"Posting Month Breakdown"}
               className="text-lg text-center"

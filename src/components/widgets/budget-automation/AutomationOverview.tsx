@@ -130,7 +130,7 @@ function AutomationOverview({ baProps }: { baProps: BudgetAutomationState }) {
                 {baProps.selectedPastRunCategory.postingMonths?.map((pm) => {
                   const amt = {
                     monthYear: format(
-                      parseISO(pm.postingMonth),
+                      parseISO(pm.postingMonth.substring(0, 10)),
                       "MMM yyyy"
                     ).toUpperCase(),
                     previousAmount: pm.oldAmountBudgeted || 0,

@@ -1,8 +1,10 @@
-import React from "react";
+import React, { useEffect } from "react";
 import { format, parse, parseISO, startOfDay } from "date-fns";
 import zonedTimeToUtc from "date-fns-tz/zonedTimeToUtc";
 import {
   AutoRun,
+  AutoRunCategory,
+  AutoRunCategoryGroup,
   AutoRunCategoryMonth,
   getAutoRunCategoryGroupTotal,
   getAutoRunCategoryTotal,
@@ -23,7 +25,7 @@ function AmountMonths({ baProps }: { baProps: BudgetAutomationState }) {
 
     if (!run) return list;
 
-    const isLocked = run.isLocked;
+    const isLocked = !baProps.showUpcoming ? false : run.isLocked;
 
     for (let i = 0; i < run.categoryGroups.length; i++) {
       const grp = run.categoryGroups[i];
@@ -33,6 +35,7 @@ function AmountMonths({ baProps }: { baProps: BudgetAutomationState }) {
           parentId: "",
           id: grp.groupID,
           name: grp.groupName,
+          data: grp,
           selected: grp.categories.reduce((prev, curr) => {
             return (
               prev ||
@@ -53,6 +56,7 @@ function AmountMonths({ baProps }: { baProps: BudgetAutomationState }) {
             parentId: grp.groupID,
             id: cat.categoryGUID,
             name: cat.categoryName,
+            data: cat,
             selected: cat.postingMonths.reduce((prev, curr) => {
               return prev || curr.included;
             }, false),
@@ -66,6 +70,7 @@ function AmountMonths({ baProps }: { baProps: BudgetAutomationState }) {
             list.push({
               parentId: cat.categoryGUID,
               id: generateUUID(),
+              data: month,
               name: month.postingMonth,
               selected: month.included,
               locked: isLocked,
@@ -75,6 +80,7 @@ function AmountMonths({ baProps }: { baProps: BudgetAutomationState }) {
       }
     }
 
+    log("list", list);
     return list;
   };
 
@@ -83,10 +89,8 @@ function AmountMonths({ baProps }: { baProps: BudgetAutomationState }) {
       case 0: {
         if (!run) return <></>;
 
-        const grp = run.categoryGroups.filter(
-          (grp: any) => grp.groupID.toLowerCase() == item.id.toLowerCase()
-        )[0];
-        if (!grp) return <></>;
+        if (!item.data) return <></>;
+        const grp = item.data as AutoRunCategoryGroup;
 
         return (
           <div className="flex flex-grow justify-between font-mplus font-extrabold py-[1px] hover:cursor-pointer rounded-lg">
@@ -101,14 +105,10 @@ function AmountMonths({ baProps }: { baProps: BudgetAutomationState }) {
       }
       case 1: {
         if (!run) return <></>;
-        const grp = run.categoryGroups.filter(
-          (grp: any) => grp.groupID.toLowerCase() == item.parentId.toLowerCase()
-        )[0];
-        if (!grp) return <></>;
-        const cat = grp.categories.filter(
-          (c: any) => c.categoryGUID.toLowerCase() == item.id.toLowerCase()
-        )[0];
-        if (!cat) return <></>;
+
+        if (!item.data) return <></>;
+        const cat = item.data as AutoRunCategory;
+
         return (
           <div
             onClick={() => baProps.selectPastRunCategory(item)}
@@ -137,20 +137,8 @@ function AmountMonths({ baProps }: { baProps: BudgetAutomationState }) {
         // This is pretty bad, but it works!
         if (!run) return <></>;
 
-        const grp = run.categoryGroups.find((grp: any) =>
-          grp.categories.find(
-            (cat: any) =>
-              cat.categoryGUID.toLowerCase() == item.parentId.toLowerCase()
-          )
-        );
-        const cat = grp?.categories.find(
-          (c: any) =>
-            c.categoryGUID.toLowerCase() == item.parentId.toLowerCase() &&
-            c.postingMonths.find((m: any) => m.postingMonth == item.name)
-        );
-        const month = cat?.postingMonths.find(
-          (m: any) => m?.postingMonth == item.name
-        );
+        if (!item.data) return <></>;
+        const month = item.data as AutoRunCategoryMonth;
 
         return (
           <div className="flex flex-grow justify-between font-mplus text-gray-400 text-sm py-[1px] hover:cursor-pointer rounded-lg">
@@ -181,9 +169,14 @@ function AmountMonths({ baProps }: { baProps: BudgetAutomationState }) {
   let run = baProps.showUpcoming
     ? (baProps.nextAutoRun as AutoRun)
     : baProps.selectedPastRun;
+
   const hierarchyTableProps = useHierarchyTable(run, createList);
 
-  log("run", run);
+  useEffect(() => {
+    hierarchyTableProps.setListData(createList(run));
+  }, [baProps.showUpcoming]);
+
+  log("run", { run, list: hierarchyTableProps.listData });
   return (
     <div className="flex flex-col flex-grow h-full space-y-2">
       <div className="text-center font-mplus text-2xl sm:text-3xl font-extrabold">
@@ -217,7 +210,7 @@ function AmountMonths({ baProps }: { baProps: BudgetAutomationState }) {
           getRowContent={getRowContent}
           indentPixels={"20px"}
           showCheckboxes={baProps.showUpcoming}
-          isCollapsible={!baProps.showUpcoming}
+          isCollapsible={false}
           onDataChanged={baProps.updateToggledAutoRunCategories}
         />
       </Card>

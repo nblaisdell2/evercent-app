@@ -5,13 +5,14 @@ import {
   differenceInMonths,
   isEqual,
   isSameDay,
+  isSameMonth,
   parseISO,
   startOfMonth,
   startOfToday,
 } from "date-fns";
 import { getAPIResponse } from "../utils/api";
 import { log } from "../utils/log";
-import { generateUUID, sum } from "../utils/util";
+import { generateUUID, roundNumber, sum } from "../utils/util";
 import {
   Budget,
   BudgetMonth,
@@ -379,7 +380,7 @@ export const getPostingMonths = (
   nextPaydate: string,
   overrideNum?: number | undefined
 ): PostingMonth[] => {
-  const DEBUG = category.name == "AWS";
+  const DEBUG = category.name == "Phone" && overrideNum == undefined;
 
   if (DEBUG) log("category", { category, payFreq, nextPaydate, overrideNum });
 
@@ -390,6 +391,7 @@ export const getPostingMonths = (
     category.adjustedAmountPlusExtra,
     payFreq
   );
+
   let totalDesired = category.adjustedAmount;
 
   let currMonth = parseISO(nextPaydate);
@@ -438,6 +440,7 @@ export const getPostingMonths = (
         !category.regularExpenseDetails?.multipleTransactions &&
         bc.activity < 0
       ) {
+        if (DEBUG) log("SKIPPING TO NEXT MONTH");
         currMonth = addMonths(currMonth, 1);
         continue;
       }
@@ -447,6 +450,15 @@ export const getPostingMonths = (
           ? desiredPostAmt
           : Math.min(totalAmt, desiredPostAmt);
 
+        if (roundNumber(postAmt, 2) <= 0) break;
+
+        if (DEBUG) {
+          log("Adding posting month!", {
+            month: parseISO(bm.month).toISOString(),
+            amount: postAmt,
+            percent: 0,
+          });
+        }
         postingMonths.push({
           month: parseISO(bm.month).toISOString(),
           amount: postAmt,
@@ -890,10 +902,32 @@ export const getRegularExpenses = (categoryGroups: CategoryGroup[]) => {
 
 export const getNumExpensesWithTargetMet = (
   categoryGroups: CategoryGroup[],
-  monthsAheadTarget: number
+  monthsAheadTarget: number,
+  budget: Budget,
+  userData: UserData
 ) => {
   return getAllCategories(categoryGroups, false).reduce((prev, curr) => {
-    if (curr.monthsAhead >= monthsAheadTarget) return prev + 1;
+    const calcPostingMonths = getPostingMonths(
+      curr,
+      budget.months,
+      userData.payFrequency,
+      userData.nextPaydate,
+      curr.postingMonths.length
+    );
+    if (curr.name == "Phone") {
+      log("comparing posting months", {
+        calcPostingMonths,
+        postingMonths: curr.postingMonths,
+      });
+    }
+    const monthsAhead = curr.postingMonths.filter(
+      (pm) =>
+        pm?.month !== startOfMonth(new Date()).toISOString() &&
+        calcPostingMonths.find(
+          (pm2) => pm2.month.substring(0, 10) == pm.month.substring(0, 10)
+        )?.amount == pm.amount
+    ).length;
+    if (monthsAhead >= monthsAheadTarget) return prev + 1;
     return prev;
   }, 0);
 };

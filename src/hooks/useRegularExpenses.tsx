@@ -25,6 +25,7 @@ import { CheckboxItem } from "../components/elements/HierarchyTable";
 import { getDistinctValues, sleep, sum } from "../utils/util";
 import { useQueryClient } from "@tanstack/react-query";
 import { EvercentData } from "../model/evercent";
+import { isSameMonth, parseISO } from "date-fns";
 
 export type RegularExpenseBudgetAmounts = {
   totalAvailable: number;
@@ -187,6 +188,7 @@ function useRegularExpenses(widgetProps: WidgetProps) {
                   categoryID: budCat.categoryID,
                   categoryName: budCat.name,
                 });
+                budCat.budgeted = -budCat.available + budCat.budgeted;
               } else if (i != 0 && budCat.budgeted > 0) {
                 newMonths.push({
                   month: bm.month,
@@ -195,6 +197,7 @@ function useRegularExpenses(widgetProps: WidgetProps) {
                   categoryID: budCat.categoryID,
                   categoryName: budCat.name,
                 });
+                budCat.budgeted = 0;
               }
             }
           }
@@ -255,10 +258,27 @@ function useRegularExpenses(widgetProps: WidgetProps) {
           };
         });
 
+        if (isSameMonth(parseISO(pm.month), new Date())) {
+          const bm = getBudgetMonth(budgetMonths, parseISO(pm.month));
+          const bc = getBudgetCategory(
+            bm,
+            categoriesToPost[i].categoryGroupID,
+            categoriesToPost[i].categoryID
+          );
+          pm.amount += bc.budgeted;
+        }
+
         await sleep(1500);
         // Loop through each of the new regular expenses, based on the user's
         // newly entered months ahead for each category, and post the amounts
         // to the user's actual budget
+        log("need to post to budget", {
+          userID: userData?.userID as string,
+          budgetID: userData?.budgetID as string,
+          categoryID: categoriesToPost[i].categoryID.toLowerCase(),
+          month: pm.month,
+          newBudgetedAmount: pm.amount,
+        });
         await updateBudgetCategoryAmount({
           userID: userData?.userID as string,
           budgetID: userData?.budgetID as string,
@@ -272,6 +292,10 @@ function useRegularExpenses(widgetProps: WidgetProps) {
     // reload all evercent data when finished posting new amounts
     // to user's budget
     await queryClient.invalidateQueries(["get-all-evercent-data"]);
+
+    hierarchyTableData.setListData(
+      createList(getPostingMonthsBudgeted(regularExpenses))
+    );
 
     setPostingDetails((prev) => {
       return {
@@ -309,7 +333,7 @@ function useRegularExpenses(widgetProps: WidgetProps) {
       category,
       budget?.months as BudgetMonth[],
       userData?.payFrequency as PayFrequency,
-      userData?.nextPaydate as string,
+      new Date().toISOString(),
       currMonths.length + 1
     );
     log("increment/decrement", {
@@ -379,7 +403,7 @@ function useRegularExpenses(widgetProps: WidgetProps) {
   const getPostingMonthsForCategory = (category: Category) => {
     let monthData: { [key: string]: number } = {};
     const catPostMonths = category.postingMonths;
-    if (category.name == "Groceries") log({ catPostMonths });
+    // if (category.name == "Groceries") log({ catPostMonths });
     catPostMonths.forEach((pm) => {
       if (!Object.keys(monthData).includes(pm.month)) {
         monthData[pm.month] = 0;

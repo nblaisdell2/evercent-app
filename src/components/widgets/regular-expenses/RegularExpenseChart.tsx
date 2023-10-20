@@ -1,10 +1,20 @@
 import React from "react";
 import Card from "../../elements/Card";
 import { RegularExpensesState } from "../../../hooks/useRegularExpenses";
-import { Category, CategoryGroup } from "../../../model/category";
+import {
+  Category,
+  CategoryGroup,
+  getPostingMonths,
+} from "../../../model/category";
 import { startOfMonth } from "date-fns";
+import useEvercent from "../../../hooks/useEvercent";
+import { BudgetMonth } from "../../../model/budget";
+import { PayFrequency } from "../../../model/userData";
+import { log } from "../../../utils/log";
 
 function RegularExpenseChart({ reProps }: { reProps: RegularExpensesState }) {
+  const { userData, budget } = useEvercent();
+
   const getChartBarColor = (monthsAhead: number, target: number) => {
     let firstCheck = 2;
     if (target == 3) {
@@ -23,8 +33,25 @@ function RegularExpenseChart({ reProps }: { reProps: RegularExpensesState }) {
   };
 
   const getChartItemAndBar = (category: Category, target: number) => {
+    const calcPostingMonths = getPostingMonths(
+      category,
+      budget?.months as BudgetMonth[],
+      userData?.payFrequency as PayFrequency,
+      userData?.nextPaydate as string,
+      category.postingMonths.length
+    );
+    if (category.name == "Phone") {
+      log("comparing posting months", {
+        calcPostingMonths,
+        postingMonths: category.postingMonths,
+      });
+    }
     const monthsAhead = category.postingMonths.filter(
-      (pm) => pm?.month !== startOfMonth(new Date()).toISOString()
+      (pm) =>
+        pm?.month !== startOfMonth(new Date()).toISOString() &&
+        calcPostingMonths.find(
+          (pm2) => pm2.month.substring(0, 10) == pm.month.substring(0, 10)
+        )?.amount == pm.amount
     ).length;
     const barWidth = 10.6 * (target == 3 ? 2 : 1);
 
