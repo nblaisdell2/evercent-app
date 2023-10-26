@@ -11,6 +11,7 @@ import useEvercent from "../../../hooks/useEvercent";
 import { BudgetMonth } from "../../../model/budget";
 import { PayFrequency } from "../../../model/userData";
 import { log } from "../../../utils/log";
+import { roundNumber } from "../../../utils/util";
 
 function RegularExpenseChart({ reProps }: { reProps: RegularExpensesState }) {
   const { userData, budget } = useEvercent();
@@ -40,8 +41,9 @@ function RegularExpenseChart({ reProps }: { reProps: RegularExpensesState }) {
       userData?.nextPaydate as string,
       category.postingMonths.length
     );
-    if (category.name == "Phone") {
+    if (category.name == "Office 365") {
       log("comparing posting months", {
+        category,
         calcPostingMonths,
         postingMonths: category.postingMonths,
       });
@@ -49,9 +51,12 @@ function RegularExpenseChart({ reProps }: { reProps: RegularExpensesState }) {
     const monthsAhead = category.postingMonths.filter(
       (pm) =>
         pm?.month !== startOfMonth(new Date()).toISOString() &&
-        calcPostingMonths.find(
-          (pm2) => pm2.month.substring(0, 10) == pm.month.substring(0, 10)
-        )?.amount == pm.amount
+        roundNumber(
+          calcPostingMonths.find(
+            (pm2) => pm2.month.substring(0, 10) == pm.month.substring(0, 10)
+          )?.amount || 0,
+          2
+        ) == roundNumber(pm.amount, 2)
     ).length;
     const barWidth = 10.6 * (target == 3 ? 2 : 1);
 

@@ -2,12 +2,10 @@ import { useEffect, useState } from "react";
 import {
   MutationFunction,
   UseMutateAsyncFunction,
-  UseMutateFunction,
   useMutation,
   useQueryClient,
 } from "@tanstack/react-query";
 import { Fn, FnType, Queries } from "./useEvercent";
-import { log } from "console";
 
 export function useSQLMutation<
   Q extends Queries,
@@ -33,13 +31,13 @@ export function useSQLMutation<
 } {
   const queryClient = useQueryClient();
 
-  const { mutate, mutateAsync, isError, error, data, isLoading } = useMutation<
+  const { mutateAsync, isError, error, data } = useMutation<
     TDataOutput,
     unknown,
     TVariables,
     unknown
   >([mutationKeys], mutationFn, {
-    onSettled: async (newData, error, variables, context) => {
+    onSettled: async (newData, error) => {
       if (queryKey) {
         // Cancel any outgoing refetches
         // (so they don't overwrite our optimistic update)

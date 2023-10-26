@@ -8,7 +8,6 @@ import {
 import { updateMonthsAheadTarget, updateUserDetails } from "../model/userData";
 import { useSQLQuery } from "./useSQLQuery";
 import { updateCategoryData } from "../model/category";
-import { log } from "../utils/log";
 import { useAuth0 } from "@auth0/auth0-react";
 import { useSQLMutation } from "./useSQLMutation";
 import {
@@ -17,7 +16,6 @@ import {
   switchBudget,
   updateBudgetCategoryAmount,
 } from "../model/budget";
-import { useState } from "react";
 import { cancelAutoRuns, saveAutoRunDetails } from "../model/autoRun";
 
 export type Queries =
