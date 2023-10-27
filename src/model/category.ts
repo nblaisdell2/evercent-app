@@ -360,17 +360,28 @@ const calculateAdjustedAmount = (
     category.amount,
     category.regularExpenseDetails
   );
+
   // When we have fewer months than expected to pay something off, we'll
   // need to pay more per month, which is accounted for in the "catAmtDivided > catAmtByFreq"
   // statement. However, when we have many months ahead to pay it off, and the amount
   // would be much lower than expected per month, we'll still pay off the amount by
   // frequency, instead of that much lower amount, which can be difficult to keep
   // track of.
+  let finalAdjAmt = 0;
   if (catAmtDivided > catAmtByFreq) {
-    return catAmtDivided;
+    finalAdjAmt = catAmtDivided;
   } else {
-    return catAmtByFreq;
+    finalAdjAmt = catAmtByFreq;
   }
+
+  if (!Number.isInteger(finalAdjAmt)) {
+    log("NOT A WHOLE NUMBER", finalAdjAmt);
+    finalAdjAmt += 0.01;
+  } else {
+    log("IS A WHOLE NUMBER", finalAdjAmt);
+  }
+
+  return finalAdjAmt;
 };
 
 export const getPostingMonths = (
@@ -380,7 +391,7 @@ export const getPostingMonths = (
   nextPaydate: string,
   overrideNum?: number | undefined
 ): PostingMonth[] => {
-  const DEBUG = category.name == "Phone" && overrideNum == undefined;
+  const DEBUG = category.name == "Office 365" && overrideNum == undefined;
 
   if (DEBUG) log("category", { category, payFreq, nextPaydate, overrideNum });
 
@@ -406,7 +417,7 @@ export const getPostingMonths = (
     (!useOverride && totalAmt > 0) ||
     (useOverride && postingMonths.length < overrideNum)
   ) {
-    if (DEBUG) log("getting budget month", { currMonth });
+    if (DEBUG) log("getting budget month", { currMonth, totalAmt });
     // log("getPostingMonths");
     const bm = getBudgetMonth(months, currMonth);
     if (!bm) {
@@ -446,11 +457,22 @@ export const getPostingMonths = (
       }
 
       if (desiredPostAmt !== -1) {
-        const postAmt = useOverride
+        let postAmt = useOverride
           ? desiredPostAmt
           : Math.min(totalAmt, desiredPostAmt);
 
-        if (roundNumber(postAmt, 2) <= 0) break;
+        if (DEBUG) log("postAmt", roundNumber(postAmt, 2));
+        if (roundNumber(postAmt, 2) <= 0) {
+          currMonth = addMonths(currMonth, 1);
+          continue;
+        }
+
+        // if (!Number.isInteger(postAmt)) {
+        //   log("NOT A WHOLE NUMBER", postAmt);
+        //   postAmt += 0.01;
+        // } else {
+        //   log("IS A WHOLE NUMBER", postAmt);
+        // }
 
         if (DEBUG) {
           log("Adding posting month!", {
