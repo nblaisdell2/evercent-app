@@ -174,7 +174,7 @@ function AmountMonths({ baProps }: { baProps: BudgetAutomationState }) {
 
   useEffect(() => {
     hierarchyTableProps.setListData(createList(run));
-  }, [baProps.showUpcoming]);
+  }, [baProps.showUpcoming, run]);
 
   log("run", { run, list: hierarchyTableProps.listData });
   return (
