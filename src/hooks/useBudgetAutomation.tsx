@@ -80,10 +80,10 @@ function useBudgetAutomation(widgetProps: WidgetProps) {
       return;
     }
 
-    const grp = pastRuns[0].categoryGroups.filter(
+    const grp = selectedPastRun?.categoryGroups.filter(
       (g) => g.groupID.toLowerCase() == item.parentId.toLowerCase()
     )[0];
-    const cat = grp.categories.filter(
+    const cat = grp?.categories.filter(
       (c) => c.categoryGUID.toLowerCase() == item.id.toLowerCase()
     )[0];
     setSelectedPastRunCategory(cat);
