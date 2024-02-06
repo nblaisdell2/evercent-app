@@ -30,6 +30,8 @@ export type BudgetMonthCategoryGroup = {
   activity: number;
   available: number;
   categories: BudgetMonthCategory[];
+  hidden: boolean;
+  deleted: boolean;
 };
 
 export type BudgetMonthCategory = {
@@ -40,6 +42,8 @@ export type BudgetMonthCategory = {
   budgeted: number;
   activity: number;
   available: number;
+  hidden?: boolean;
+  deleted?: boolean;
 };
 
 export const getBudgetsList = (userID: string) => async () => {
@@ -164,11 +168,16 @@ export const getTotalAvailableInBudget = (budget: Budget) => {
   // Check to see if there's any money in the "To Be Assigned" section
   // from the first (current) budget month
   const tbb = budget.months[0].tbb;
+  log("Adding to Total Available (TBB):", tbb);
 
   // Go through all the "available" amounts for the latest budget month
   const finalBM = budget.months[budget.months.length - 1];
   const available = finalBM.groups.reduce((prev, curr) => {
-    return prev + curr.available;
+    const groupTotal = curr.categories.reduce((prev2, curr2) => {
+      if (curr2.hidden || curr2.deleted) return prev2;
+      return prev2 + curr2.available;
+    }, 0);
+    return groupTotal;
   }, 0);
 
   // Then, after adding those values up, and it should be the total available
