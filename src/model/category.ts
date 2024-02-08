@@ -291,7 +291,8 @@ const calculateAdjustedAmount = (
   category: Category,
   months: BudgetMonth[],
   recalculate: boolean,
-  temporary?: boolean
+  temporary?: boolean,
+  override?: boolean
 ): number => {
   // If it's not a regular expense, or if it is a regular expense,
   // and it's a monthly expense, simply return the user's entered category amount
@@ -306,6 +307,8 @@ const calculateAdjustedAmount = (
   if (!category.regularExpenseDetails.includeOnChart) {
     return 0;
   }
+
+  log("calculating adjusted amount for " + category.name);
 
   let numMonths = 0;
   if (!recalculate) {
@@ -330,7 +333,7 @@ const calculateAdjustedAmount = (
       log("budgetCategory", budgetCategory);
 
       if (budgetCategory) {
-        if (budgetCategory.available >= category.amount) {
+        if (!override && budgetCategory.available >= category.amount) {
           numMonths = getNumberOfMonthsByFrequency(
             category.regularExpenseDetails
           );
@@ -391,7 +394,7 @@ export const getPostingMonths = (
   nextPaydate: string,
   overrideNum?: number | undefined
 ): PostingMonth[] => {
-  const DEBUG = category.name == "Office 365" && overrideNum == undefined;
+  const DEBUG = category.name == "Car Taxes"; // && overrideNum == undefined;
 
   if (DEBUG) log("category", { category, payFreq, nextPaydate, overrideNum });
 
@@ -403,11 +406,21 @@ export const getPostingMonths = (
     payFreq
   );
 
-  let totalDesired = category.adjustedAmount;
+  let totalDesired =
+    overrideNum == undefined
+      ? category.adjustedAmount
+      : calculateAdjustedAmount(category, months, true, false, true);
 
   let currMonth = parseISO(nextPaydate);
 
-  if (DEBUG) log("amounts", { totalAmt, totalDesired, currMonth, useOverride });
+  if (DEBUG) {
+    log("amounts", {
+      totalAmt,
+      totalDesired,
+      currMonth,
+      useOverride,
+    });
+  }
 
   // Keep finding months until
   //  1. We run out of money (totalAmt)
@@ -929,25 +942,25 @@ export const getNumExpensesWithTargetMet = (
   userData: UserData
 ) => {
   return getAllCategories(categoryGroups, false).reduce((prev, curr) => {
-    const calcPostingMonths = getPostingMonths(
-      curr,
-      budget.months,
-      userData.payFrequency,
-      userData.nextPaydate,
-      curr.postingMonths.length
-    );
-    if (curr.name == "Phone") {
-      log("comparing posting months", {
-        calcPostingMonths,
-        postingMonths: curr.postingMonths,
-      });
-    }
+    // const calcPostingMonths = getPostingMonths(
+    //   curr,
+    //   budget.months,
+    //   userData.payFrequency,
+    //   userData.nextPaydate,
+    //   curr.postingMonths.length
+    // );
+    // if (curr.name == "Phone") {
+    //   log("comparing posting months", {
+    //     calcPostingMonths,
+    //     postingMonths: curr.postingMonths,
+    //   });
+    // }
     const monthsAhead = curr.postingMonths.filter(
-      (pm) =>
-        pm?.month !== startOfMonth(new Date()).toISOString() &&
-        calcPostingMonths.find(
-          (pm2) => pm2.month.substring(0, 10) == pm.month.substring(0, 10)
-        )?.amount == pm.amount
+      (pm) => pm?.month !== startOfMonth(new Date()).toISOString()
+      // &&
+      // calcPostingMonths.find(
+      //   (pm2) => pm2.month.substring(0, 10) == pm.month.substring(0, 10)
+      // )?.amount == pm.amount
     ).length;
     if (monthsAhead >= monthsAheadTarget) return prev + 1;
     return prev;

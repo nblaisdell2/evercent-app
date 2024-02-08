@@ -6,7 +6,7 @@ import {
   CategoryGroup,
   getPostingMonths,
 } from "../../../model/category";
-import { startOfMonth } from "date-fns";
+import { addMonths, startOfMonth } from "date-fns";
 import useEvercent from "../../../hooks/useEvercent";
 import { BudgetMonth } from "../../../model/budget";
 import { PayFrequency } from "../../../model/userData";
@@ -34,29 +34,23 @@ function RegularExpenseChart({ reProps }: { reProps: RegularExpensesState }) {
   };
 
   const getChartItemAndBar = (category: Category, target: number) => {
-    const calcPostingMonths = getPostingMonths(
-      category,
-      budget?.months as BudgetMonth[],
-      userData?.payFrequency as PayFrequency,
-      userData?.nextPaydate as string,
-      category.postingMonths.length
-    );
-    if (category.name == "Office 365") {
-      log("comparing posting months", {
-        category,
-        calcPostingMonths,
-        postingMonths: category.postingMonths,
-      });
-    }
+    // const calcPostingMonths = getPostingMonths(
+    //   category,
+    //   budget?.months as BudgetMonth[],
+    //   userData?.payFrequency as PayFrequency,
+    //   addMonths(startOfMonth(new Date()), 1).toISOString(),
+    //   category.postingMonths.length + 5
+    // );
+
     const monthsAhead = category.postingMonths.filter(
-      (pm) =>
-        pm?.month !== startOfMonth(new Date()).toISOString() &&
-        roundNumber(
-          calcPostingMonths.find(
-            (pm2) => pm2.month.substring(0, 10) == pm.month.substring(0, 10)
-          )?.amount || 0,
-          2
-        ) == roundNumber(pm.amount, 2)
+      (pm) => pm?.month !== startOfMonth(new Date()).toISOString()
+      // &&
+      // roundNumber(
+      //   calcPostingMonths.find(
+      //     (pm2) => pm2.month.substring(0, 10) == pm.month.substring(0, 10)
+      //   )?.amount || 0,
+      //   2
+      // ) == roundNumber(pm.amount, 2)
     ).length;
     const barWidth = 10.6 * (target == 3 ? 2 : 1);
 
