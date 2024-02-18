@@ -394,7 +394,7 @@ export const getPostingMonths = (
   nextPaydate: string,
   overrideNum?: number | undefined
 ): PostingMonth[] => {
-  const DEBUG = category.name == "Car Taxes"; // && overrideNum == undefined;
+  const DEBUG = category.name == "Electric"; // && overrideNum == undefined;
 
   if (DEBUG) log("category", { category, payFreq, nextPaydate, overrideNum });
 
@@ -450,21 +450,29 @@ export const getPostingMonths = (
         // Get YNAB category "budgeted" amount
         // (use 0 if negative)
         if (bc.budgeted < totalDesired) {
-          desiredPostAmt = totalDesired - bc.budgeted;
+          desiredPostAmt = totalDesired - (bc.budgeted < 0 ? 0 : bc.budgeted);
         }
       } else {
         desiredPostAmt = totalDesired;
       }
 
-      if (DEBUG) log("desiredPostAmt", { desiredPostAmt });
+      if (DEBUG)
+        log("desiredPostAmt", { desiredPostAmt, available: bc.available });
+
+      // if (bc.available >= desiredPostAmt) {
+      //   if (DEBUG) log("SKIPPING TO NEXT MONTH 1");
+      //   currMonth = addMonths(currMonth, 1);
+      //   continue;
+      // }
 
       if (
         // useOverride &&
         isEqual(parseISO(bm.month), startOfMonth(new Date())) &&
-        !category.regularExpenseDetails?.multipleTransactions &&
-        bc.activity < 0
+        ((!category.regularExpenseDetails?.multipleTransactions &&
+          bc.activity < 0) ||
+          bc.available >= desiredPostAmt)
       ) {
-        if (DEBUG) log("SKIPPING TO NEXT MONTH");
+        if (DEBUG) log("SKIPPING TO NEXT MONTH 2");
         currMonth = addMonths(currMonth, 1);
         continue;
       }
