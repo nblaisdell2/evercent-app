@@ -394,7 +394,7 @@ export const getPostingMonths = (
   nextPaydate: string,
   overrideNum?: number | undefined
 ): PostingMonth[] => {
-  const DEBUG = category.name == "Electric"; // && overrideNum == undefined;
+  const DEBUG = category.name == "Car Taxes"; // && overrideNum == undefined;
 
   if (DEBUG) log("category", { category, payFreq, nextPaydate, overrideNum });
 
@@ -457,7 +457,11 @@ export const getPostingMonths = (
       }
 
       if (DEBUG)
-        log("desiredPostAmt", { desiredPostAmt, available: bc.available });
+        log("desiredPostAmt", {
+          desiredPostAmt,
+          available: bc.available,
+          bmMonth: bm.month,
+        });
 
       // if (bc.available >= desiredPostAmt) {
       //   if (DEBUG) log("SKIPPING TO NEXT MONTH 1");
@@ -467,6 +471,7 @@ export const getPostingMonths = (
 
       if (
         // useOverride &&
+        !useOverride &&
         isEqual(parseISO(bm.month), startOfMonth(new Date())) &&
         ((!category.regularExpenseDetails?.multipleTransactions &&
           bc.activity < 0) ||

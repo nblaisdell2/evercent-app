@@ -329,6 +329,7 @@ function useRegularExpenses(widgetProps: WidgetProps) {
     let currMonths = category.postingMonths;
     if (currMonths.length == 0 && !increment) return;
 
+    log("getting posting month for inc/dec");
     let calculated = getPostingMonths(
       category,
       budget?.months as BudgetMonth[],
