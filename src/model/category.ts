@@ -394,7 +394,7 @@ export const getPostingMonths = (
   nextPaydate: string,
   overrideNum?: number | undefined
 ): PostingMonth[] => {
-  const DEBUG = category.name == "Car Taxes"; // && overrideNum == undefined;
+  const DEBUG = category.name == "Spotify"; // && overrideNum == undefined;
 
   if (DEBUG) log("category", { category, payFreq, nextPaydate, overrideNum });
 
@@ -471,11 +471,11 @@ export const getPostingMonths = (
 
       if (
         // useOverride &&
-        !useOverride &&
+        // !useOverride &&
         isEqual(parseISO(bm.month), startOfMonth(new Date())) &&
         ((!category.regularExpenseDetails?.multipleTransactions &&
           bc.activity < 0) ||
-          bc.available >= desiredPostAmt)
+          (useOverride ? 0 : bc.available) >= desiredPostAmt)
       ) {
         if (DEBUG) log("SKIPPING TO NEXT MONTH 2");
         currMonth = addMonths(currMonth, 1);
