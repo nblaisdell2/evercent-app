@@ -137,6 +137,6 @@ done <<< $(echo "$ALLMYSECRETS" | jq -r '. | to_entries[] | select(.key | starts
 envVars+="}"
 
 echo "Updating Lambda Environment Variables"
-aws lambda update-function-configuration --function-name $dockerContainerName --environment "{ \"Variables\": $envVars }"
+aws lambda update-function-configuration --function-name $dockerContainerName --timeout 900 --environment "{ \"Variables\": $envVars }"
 
 rm aws.json
