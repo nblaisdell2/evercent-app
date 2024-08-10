@@ -42,7 +42,7 @@ const queryClient = new QueryClient({
 const trpcClient = trpc.createClient({
   links: [
     httpBatchLink({
-      url: "http://localhost:5000",
+      url: process.env.CLIENT_BASE_API_URL as string,
       // // You can pass any HTTP headers you wish here
       // async headers() {
       //   return {

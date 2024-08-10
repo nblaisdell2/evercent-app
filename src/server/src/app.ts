@@ -37,7 +37,7 @@ export const createContext = ({
 
 // tRPC
 app.use(
-  process.env.SERVER_API_BASE_URL + "/",
+  "/",
   trpcExpress.createExpressMiddleware({
     router: appRouter,
     createContext,
