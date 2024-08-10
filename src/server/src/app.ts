@@ -5,6 +5,8 @@ import authorizeRouter from "./router/authorizeRouter";
 
 import * as trpcExpress from "@trpc/server/adapters/express";
 import { appRouter } from "./trpc";
+import { config } from "dotenv";
+config();
 
 const app = express();
 
@@ -35,7 +37,7 @@ export const createContext = ({
 
 // tRPC
 app.use(
-  "/",
+  process.env.SERVER_API_BASE_URL + "/",
   trpcExpress.createExpressMiddleware({
     router: appRouter,
     createContext,
