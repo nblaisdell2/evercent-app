@@ -15,11 +15,11 @@ RUN npm install
 
 # Then, since we're using TypeScript, run the "build" command to 
 # transpile the code into JavaScript
-RUN npm run build
+RUN npm run build:server
 
 # Then, do some cleanup
-RUN cp -r ./dist/* .
-RUN rm -rf ./dist
+RUN cp -r ./src/server/dist/* .
+RUN rm -rf ./src/server/dist
 
 # Lastly, set the CMD to your handler 
 #   (could also be done as a parameter override outside of the Dockerfile)
