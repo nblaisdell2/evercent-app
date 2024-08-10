@@ -45,22 +45,31 @@ jobs:
         shell: bash
         env:
           ALLMYSECRETS: ${{ toJSON(secrets) }}
+      - name: Check needed values
+        run: bash check_github_secrets.sh ${{ secrets.AWS_ACCOUNT_ID || 'none' }} ${{ secrets.AWS_REGION || 'none' }} ${{ secrets.AWS_CERTIFICATE_ARN || 'none' }} ${{ secrets.AWS_LAMBDA_EXEC_ARN || 'none' }} ${{ secrets.AWS_GHACTIONS_ROLENAME || 'none' }} ${{ secrets.CLOUDFRONT_DISTRIBUTION_ID || 'none' }} ${{ secrets.SITE_URL || 'none' }} ${{ secrets.SUBDOMAIN || 'none' }}
       - name: Install Dependencies
         run: npm ci
       - name: Build the Application
-        run: npm run build
-      - name: Test the Application
-        run: npm run test
-      - name: Check needed values
-        run: bash check_github_secrets.sh ${{ secrets.AWS_ACCOUNT_ID || 'none' }} ${{ secrets.AWS_REGION || 'none' }} ${{ secrets.AWS_CERTIFICATE_ARN || 'none' }} ${{ secrets.SITE_URL || 'none' }} ${{ secrets.SUBDOMAIN || 'none' }} ${{ secrets.CLOUDFRONT_DISTRIBUTION_ID || 'none' }} ${{ secrets.AWS_GHACTIONS_ROLENAME || 'none' }}
+        run: npm run build:client && npm run build:server
+      # - name: Test the Application
+      #   run: npm run test
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v2
         with:
           role-to-assume: arn:aws:iam::${{ secrets.AWS_ACCOUNT_ID }}:role/${{ secrets.AWS_GHACTIONS_ROLENAME }}
           aws-region: ${{ secrets.AWS_REGION }}
-      - name: Create AWS Infrastructure
+      - name: Create AWS Infrastructure (Site)
         run: bash create_aws_site.sh ${{ secrets.AWS_ACCOUNT_ID }} ${{ secrets.AWS_REGION }} ${{ secrets.SITE_URL }} ${{ secrets.SUBDOMAIN }} ${{ secrets.AWS_CERTIFICATE_ARN }}
       - name: Sync Files w/ S3 Bucket
-        run: aws s3 sync ./dist s3://${{ secrets.SITE_URL }} --delete
+        run: aws s3 sync ./client/dist s3://${{ secrets.SITE_URL }} --delete
       - name: Invalidate CloudFront Distribution Cache
         run: aws cloudfront create-invalidation --distribution-id ${{ secrets.CLOUDFRONT_DISTRIBUTION_ID }} --paths "/*"
+      - name: Create AWS Infrastructure (API)
+        run: bash create_aws_api.sh ${{ secrets.AWS_ACCOUNT_ID }} ${{ secrets.AWS_REGION }} ${{ github.event.repository.name }} ${{ secrets.AWS_LAMBDA_EXEC_ARN }} ${{github.event.repository.clone_url }}
+        shell: bash
+        env:
+          ALLMYSECRETS: ${{ toJSON(secrets) }}
+      - name: Running AWS CodeBuild
+        uses: aws-actions/aws-codebuild-run-build@v1.0.12
+        with:
+          project-name: ${{ github.event.repository.name }}

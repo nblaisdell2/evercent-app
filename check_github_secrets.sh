@@ -20,13 +20,13 @@ fi
 
 if [[ $4 == "none" ]]
 then
-  echo "{SITE_URL} needs to be added to the Secrets in the GitHub repo"
-  shouldFail=1
+  echo "{AWS_LAMBDA_EXEC_ARN} needs to be added to the Secrets in the GitHub repo"
+  shouldFail=1 
 fi
 
 if [[ $5 == "none" ]]
 then
-  echo "{SUBDOMAIN} needs to be added to the Secrets in the GitHub repo"
+  echo "{AWS_GHACTIONS_ROLENAME} needs to be added to the Secrets in the GitHub repo"
   shouldFail=1
 fi
 
@@ -38,8 +38,14 @@ fi
 
 if [[ $7 == "none" ]]
 then
-  echo "{AWS_GHACTIONS_ROLENAME} needs to be added to the Secrets in the GitHub repo"
+  echo "{SITE_URL} needs to be added to the Secrets in the GitHub repo"
   shouldFail=1
+fi
+
+if [[ $8 == "none" ]]
+  echo "{SUBDOMAIN} needs to be added to the Secrets in the GitHub repo"
+  shouldFail=1
+then 
 fi
 
 if [[ $shouldFail -eq 1 ]]
