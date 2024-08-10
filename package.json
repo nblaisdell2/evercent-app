@@ -74,6 +74,7 @@
     "@types/nodemailer": "^6.4.15",
     "@types/react-select": "^5.0.1",
     "@types/uuid": "^9.0.4",
+    "aws-serverless-express": "^3.4.0",
     "axios": "^1.7.3",
     "concurrently": "^8.2.2",
     "cors": "^2.8.5",
