@@ -43,9 +43,9 @@ then
 fi
 
 if [[ $8 == "none" ]]
+then
   echo "{SUBDOMAIN} needs to be added to the Secrets in the GitHub repo"
   shouldFail=1
-then 
 fi
 
 if [[ $shouldFail -eq 1 ]]
