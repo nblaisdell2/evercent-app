@@ -16,7 +16,6 @@ const HTMLWebpackPluginConfig = new HtmlWebpackPlugin({
   favicon: "./src/client/public/favicon.ico",
   filename: "index.html",
   inject: "body",
-  publicPath: "./src/client/public/",
 });
 
 const NodePolyfillPluginConfig = new NodePolyfillPlugin();
