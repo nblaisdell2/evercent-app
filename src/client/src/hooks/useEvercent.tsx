@@ -160,11 +160,11 @@ function useEvercent() {
     evercentData = { ...data.data };
   }
 
-  log(
-    "[useEvercent()] - About to return evercent data",
-    isLoading,
-    evercentData
-  );
+  // log(
+  //   "[useEvercent()] - About to return evercent data",
+  //   isLoading,
+  //   evercentData
+  // );
 
   return {
     isLoading,

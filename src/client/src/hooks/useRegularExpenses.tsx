@@ -25,6 +25,7 @@ import {
   getPostingMonths,
   getRegularExpenses,
   PostingMonth,
+  setDebugCategory,
 } from "evercent/dist/category";
 
 export type RegularExpenseBudgetAmounts = {
@@ -83,9 +84,10 @@ function useRegularExpenses(widgetProps: WidgetProps) {
     "updateBudgetCategoryAmount"
   );
 
-  log("ERROR!!!!!!!!!!!!!!!!!!!!!");
-  log(error);
-  log(data);
+  if (error) {
+    log("ERROR!!!!!!!!!!!!!!!!!!!!!");
+    log(error);
+  }
 
   const utils = trpc.useUtils();
 
@@ -341,6 +343,8 @@ function useRegularExpenses(widgetProps: WidgetProps) {
   ) => {
     let currMonths = category.postingMonths;
     if (currMonths.length == 0 && !increment) return;
+
+    setDebugCategory(category.name);
 
     log("getting posting month for inc/dec");
     let calculated = getPostingMonths(
