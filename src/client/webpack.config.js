@@ -16,6 +16,7 @@ const HTMLWebpackPluginConfig = new HtmlWebpackPlugin({
   favicon: "./src/client/public/favicon.ico",
   filename: "index.html",
   inject: "body",
+  publicPath: "./src/client/public/",
 });
 
 const NodePolyfillPluginConfig = new NodePolyfillPlugin();
@@ -53,7 +54,13 @@ module.exports = {
     NodePolyfillPluginConfig,
     DotenvPluginConfig,
     new CopyPlugin({
-      patterns: [{ from: "public/*.png", noErrorOnMissing: true }],
+      patterns: [
+        {
+          from: "./src/client/public/evercent_logo.png",
+          to: "./evercent_logo.png",
+          noErrorOnMissing: true,
+        },
+      ],
     }),
     isDevelopment && ReactRefreshWebpackPluginConfig,
   ].filter(Boolean),
