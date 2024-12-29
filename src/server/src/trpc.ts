@@ -9,6 +9,7 @@ import {
   getAllEvercentData,
   getBudgetsList,
   lockAutoRuns,
+  logDB,
   runAutomation,
   saveAutoRunDetails,
   switchBudget,
@@ -55,6 +56,15 @@ const sendErrorEmail = async (
   });
 };
 
+const logMsg = (msg: string) => {
+  logDB({
+    logLevel: "Success",
+    msg: msg,
+    statusCode: 200,
+    timestamp: new Date().toISOString(),
+  });
+};
+
 const checkAPIStatus = async (): Promise<EvercentResponse<string>> => {
   const msg = "API is up-and-running!";
   return {
@@ -78,6 +88,7 @@ export const getProcQuery = <
   return publicProcedure.input(z.custom<P>()).query(async (opts) => {
     const response = await fn(opts.input);
     if (response.err) sendErrorEmail(false, response, opts);
+    if (response.message) logMsg(response.message);
     return response;
   });
 };
@@ -92,6 +103,7 @@ export const getProcMutation = <
   const mut = publicProcedure.input(z.custom<P>()).mutation(async (opts) => {
     const response = await fn(opts.input);
     if (response.err) sendErrorEmail(true, response, opts);
+    if (response.message) logMsg(response.message);
     return response;
   });
   return mut;
