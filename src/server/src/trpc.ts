@@ -3,6 +3,7 @@ import { z } from "zod";
 import { sendEmailMessage } from "./utils/email";
 import { log, logError } from "./utils/log";
 import { EvercentResponse } from "evercent/dist/evercent";
+import { startOfDay } from "date-fns";
 import {
   cancelAutoRuns,
   connectToYNAB,
@@ -74,6 +75,15 @@ const checkAPIStatus = async (): Promise<EvercentResponse<string>> => {
   };
 };
 
+const getToday = async (): Promise<EvercentResponse<string>> => {
+  const d = startOfDay(new Date());
+  return {
+    data: d.toISOString(),
+    err: null,
+    message: d.toISOString(),
+  };
+};
+
 const t = initTRPC.create();
 const router = t.router;
 const publicProcedure = t.procedure;
@@ -111,6 +121,7 @@ export const getProcMutation = <
 
 export const appRouter = router({
   getAPIStatus: getProcQuery(checkAPIStatus),
+  getToday: getProcQuery(getToday),
   user: router({
     getAllUserData: getProcQuery(getAllEvercentData),
     updateUserDetails: getProcMutation(updateUserDetails),
