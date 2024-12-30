@@ -81,15 +81,14 @@ const checkAPIStatus = async (): Promise<EvercentResponse<string>> => {
 };
 
 const getToday = async (): Promise<EvercentResponse<string>> => {
-  const e = startOfDay(new Date());
-  const u = Date.UTC(e.getFullYear(), e.getUTCMonth(), e.getUTCDate());
-  let t = new Date(u);
-  t = addMinutes(t, t.getTimezoneOffset());
-
+  const now = new Date();
+  const startOfDayUTC = new Date(
+    Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate())
+  );
   return {
-    data: getUTCString(t),
+    data: startOfDayUTC.toISOString(),
     err: null,
-    message: getUTCString(t),
+    message: startOfDayUTC.toISOString(),
   };
 };
 
