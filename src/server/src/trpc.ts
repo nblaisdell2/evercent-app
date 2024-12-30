@@ -4,6 +4,7 @@ import { sendEmailMessage } from "./utils/email";
 import { log, logError } from "./utils/log";
 import { EvercentResponse } from "evercent/dist/evercent";
 import { startOfDay } from "date-fns";
+import { formatInTimeZone } from "date-fns-tz";
 import {
   cancelAutoRuns,
   connectToYNAB,
@@ -66,6 +67,10 @@ const logMsg = (msg: string) => {
   });
 };
 
+const getUTCString = (parsedTime: string | number | Date) => {
+  return formatInTimeZone(parsedTime, "UTC", "yyyy-MM-dd HH:mm:ss");
+};
+
 const checkAPIStatus = async (): Promise<EvercentResponse<string>> => {
   const msg = "API is up-and-running!";
   return {
@@ -78,9 +83,9 @@ const checkAPIStatus = async (): Promise<EvercentResponse<string>> => {
 const getToday = async (): Promise<EvercentResponse<string>> => {
   const d = startOfDay(new Date());
   return {
-    data: d.toISOString(),
+    data: getUTCString(d),
     err: null,
-    message: d.toISOString(),
+    message: getUTCString(d),
   };
 };
 
