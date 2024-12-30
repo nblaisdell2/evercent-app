@@ -3,7 +3,7 @@ import { z } from "zod";
 import { sendEmailMessage } from "./utils/email";
 import { log, logError } from "./utils/log";
 import { EvercentResponse } from "evercent/dist/evercent";
-import { startOfDay } from "date-fns";
+import { addHours, addMinutes, startOfDay, toDate } from "date-fns";
 import { formatInTimeZone } from "date-fns-tz";
 import {
   cancelAutoRuns,
@@ -81,13 +81,15 @@ const checkAPIStatus = async (): Promise<EvercentResponse<string>> => {
 };
 
 const getToday = async (): Promise<EvercentResponse<string>> => {
-  const e = new Date();
-  const u = Date.UTC(e.getFullYear(), e.getMonth(), e.getDate());
-  const d = startOfDay(u);
+  const e = startOfDay(new Date());
+  const u = Date.UTC(e.getFullYear(), e.getUTCMonth(), e.getUTCDate());
+  let t = new Date(u);
+  t = addMinutes(t, t.getTimezoneOffset());
+
   return {
-    data: getUTCString(d),
+    data: getUTCString(t),
     err: null,
-    message: getUTCString(d),
+    message: getUTCString(t),
   };
 };
 
