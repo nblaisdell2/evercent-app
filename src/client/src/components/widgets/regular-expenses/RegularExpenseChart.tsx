@@ -11,6 +11,7 @@ import {
   CategoryGroup,
   getPostingMonths,
 } from "evercent/dist/category";
+import { log } from "../../../utils/log";
 
 function RegularExpenseChart({ reProps }: { reProps: RegularExpensesState }) {
   const { userData, budget } = useEvercent();
@@ -33,6 +34,7 @@ function RegularExpenseChart({ reProps }: { reProps: RegularExpensesState }) {
   };
 
   const getChartItemAndBar = (category: Category, target: number) => {
+    log("category", category);
     const calcPostingMonths = getPostingMonths(
       category,
       budget?.months as BudgetMonth[],
