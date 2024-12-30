@@ -37,7 +37,8 @@ function RegularExpenseChart({ reProps }: { reProps: RegularExpensesState }) {
       category,
       budget?.months as BudgetMonth[],
       userData?.payFrequency as PayFrequency,
-      addMonths(startOfMonth(new Date()), 1).toISOString(),
+      // @ts-ignore
+      addMonths(startOfMonth(new Date()), 1),
       category.postingMonths.length + 5
     );
 

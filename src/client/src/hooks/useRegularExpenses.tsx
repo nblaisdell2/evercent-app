@@ -351,7 +351,8 @@ function useRegularExpenses(widgetProps: WidgetProps) {
       category,
       budget?.months as BudgetMonth[],
       userData?.payFrequency as PayFrequency,
-      new Date().toISOString(),
+      // @ts-ignore
+      new Date(),
       currMonths.length + 1
     );
     log("increment/decrement", {
