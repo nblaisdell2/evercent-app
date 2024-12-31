@@ -80,6 +80,14 @@ const checkAPIStatus = async (): Promise<EvercentResponse<string>> => {
   };
 };
 
+const getStartOfDay = (strDate?: string) => {
+  const now = strDate ? new Date(strDate) : new Date();
+  const startOfDayUTC = new Date(
+    Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate())
+  );
+  return startOfDayUTC;
+};
+
 const getToday = async (): Promise<EvercentResponse<string>> => {
   const now = new Date();
   const startOfDayUTC = new Date(
