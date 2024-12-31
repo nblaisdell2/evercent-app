@@ -147,6 +147,20 @@ function useEvercent() {
     return useSQLMutation2("budget", "connectToYNAB");
   };
 
+  const getUpdatedDate = (strDate: string) => {
+    const d = new Date(strDate);
+    const newMonth = new Date(
+      Date.UTC(
+        d.getUTCFullYear(),
+        d.getUTCMonth(),
+        d.getUTCDate(),
+        0,
+        d.getTimezoneOffset()
+      )
+    ).toISOString();
+    return newMonth;
+  };
+
   const { data, isLoading } = useSQLQuery2(
     "user",
     "getAllUserData",
@@ -158,6 +172,38 @@ function useEvercent() {
 
   if (data?.data) {
     evercentData = { ...data.data };
+
+    log("Am i doing something else?");
+
+    if (evercentData.budget) {
+      log("UPDATING BUDGET!!!");
+      evercentData.budget = {
+        ...evercentData.budget,
+        months: evercentData.budget.months.map((m) => {
+          return {
+            ...m,
+            month: getUpdatedDate(m.month),
+          };
+        }),
+      };
+
+      evercentData.categoryGroups = evercentData.categoryGroups.map((cg) => {
+        return {
+          ...cg,
+          categories: cg.categories.map((c) => {
+            return {
+              ...c,
+              postingMonths: c.postingMonths.map((pm) => {
+                return {
+                  ...pm,
+                  month: getUpdatedDate(pm.month),
+                };
+              }),
+            };
+          }),
+        };
+      });
+    }
   }
 
   log(

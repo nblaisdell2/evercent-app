@@ -330,12 +330,14 @@ function useRegularExpenses(widgetProps: WidgetProps) {
   // reload our regular expenses when we recognize a change in that list
   // of category groups
   useEffect(() => {
-    log("regular expenses useEffect");
-    const newRegularExpenses = getPostingMonthsBudgeted(
-      getRegularExpenses(categoryGroups)
-    );
-    resetRegularExpenses(newRegularExpenses);
-  }, [categoryGroups]);
+    if (postingDetails.status == null) {
+      log("regular expenses useEffect");
+      const newRegularExpenses = getPostingMonthsBudgeted(
+        getRegularExpenses(categoryGroups)
+      );
+      resetRegularExpenses(newRegularExpenses);
+    }
+  }, [postingDetails]);
 
   const updateMonthsAheadForCategory = (
     category: Category,
