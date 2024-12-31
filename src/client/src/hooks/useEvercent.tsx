@@ -203,6 +203,28 @@ function useEvercent() {
           }),
         };
       });
+
+      evercentData.autoRuns = evercentData.autoRuns.map((ar) => {
+        return {
+          ...ar,
+          categoryGroups: ar.categoryGroups.map((cg) => {
+            return {
+              ...cg,
+              categories: cg.categories.map((c) => {
+                return {
+                  ...c,
+                  postingMonths: c.postingMonths.map((pm) => {
+                    return {
+                      ...pm,
+                      postingMonth: getUpdatedDate(pm.postingMonth),
+                    };
+                  }),
+                };
+              }),
+            };
+          }),
+        };
+      });
     }
   }
 
