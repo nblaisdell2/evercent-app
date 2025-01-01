@@ -18,6 +18,7 @@ import {
   updateCategoryExpenseDetails,
   updateCategoryUpcomingAmount,
 } from "evercent/dist/category";
+import { log } from "../utils/log";
 
 export type BudgetHelperState = {
   monthlyIncome: number;
@@ -96,6 +97,7 @@ function useBudgetHelper(widgetProps: WidgetProps) {
       key,
       newAmount
     );
+    log("NEW CATEGORY", newCategory);
     updateSelectedCategory(newCategory);
   };
 
