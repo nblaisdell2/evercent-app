@@ -5,7 +5,13 @@ import useHierarchyTable, { HierarchyTableState } from "./useHierarchyTable";
 import { log, logError } from "../utils/log";
 import { CheckboxItem } from "../components/elements/HierarchyTable";
 import { getDistinctValues, sleep, sum } from "../utils/util";
-import { isSameMonth, parseISO } from "date-fns";
+import {
+  addMonths,
+  getDate,
+  isSameMonth,
+  parseISO,
+  startOfDay,
+} from "date-fns";
 import { useSQLMutation2 } from "./useSQLMutation2";
 import { trpc } from "../utils/trpc";
 import { PayFrequency } from "evercent/dist/user";
@@ -339,6 +345,20 @@ function useRegularExpenses(widgetProps: WidgetProps) {
     }
   }, [postingDetails]);
 
+  const getUpdatedDate = (strDate: string) => {
+    const d = new Date(strDate);
+    const newMonth = new Date(
+      Date.UTC(
+        d.getUTCFullYear(),
+        d.getUTCMonth(),
+        d.getUTCDate(),
+        0,
+        d.getTimezoneOffset()
+      )
+    ).toISOString();
+    return newMonth;
+  };
+
   const updateMonthsAheadForCategory = (
     category: Category,
     increment: boolean
@@ -354,7 +374,7 @@ function useRegularExpenses(widgetProps: WidgetProps) {
       budget?.months as BudgetMonth[],
       userData?.payFrequency as PayFrequency,
       // @ts-ignore
-      new Date(),
+      addMonths(startOfDay(new Date()), 1),
       currMonths.length + 1
     );
     log("increment/decrement", {

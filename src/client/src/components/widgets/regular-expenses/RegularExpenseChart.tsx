@@ -34,7 +34,6 @@ function RegularExpenseChart({ reProps }: { reProps: RegularExpensesState }) {
   };
 
   const getChartItemAndBar = (category: Category, target: number) => {
-    log("category", category);
     const calcPostingMonths = getPostingMonths(
       category,
       budget?.months as BudgetMonth[],
@@ -43,6 +42,7 @@ function RegularExpenseChart({ reProps }: { reProps: RegularExpensesState }) {
       addMonths(startOfMonth(new Date()), 1),
       category.postingMonths.length + 5
     );
+    log("category: " + category.name, { category, calcPostingMonths });
 
     const monthsAhead = category.postingMonths.filter(
       (pm) =>

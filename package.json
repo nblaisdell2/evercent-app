@@ -81,7 +81,7 @@
     "date-fns": "^2.30.0",
     "date-fns-tz": "^2.0.0",
     "dotenv": "^16.4.5",
-    "evercent": "^1.0.112",
+    "evercent": "^1.0.114",
     "express": "^4.19.2",
     "nodemailer": "^6.9.14",
     "react": "^18.2.0",
