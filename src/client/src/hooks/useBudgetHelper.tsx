@@ -91,7 +91,8 @@ function useBudgetHelper(widgetProps: WidgetProps) {
       budget as Budget,
       category,
       userData?.payFrequency as PayFrequency,
-      nextPaydate,
+      // @ts-ignore
+      new Date(nextPaydate),
       key,
       newAmount
     );
@@ -117,7 +118,8 @@ function useBudgetHelper(widgetProps: WidgetProps) {
       budget as Budget,
       category,
       userData?.payFrequency as PayFrequency,
-      nextPaydate,
+      // @ts-ignore
+      new Date(nextPaydate),
       key,
       value
     );
@@ -152,7 +154,8 @@ function useBudgetHelper(widgetProps: WidgetProps) {
         budget as Budget,
         category,
         userData?.payFrequency as PayFrequency,
-        nextPaydate,
+        // @ts-ignore
+        new Date(nextPaydate),
         newAmount
       );
       updateSelectedCategory(newCategory);
@@ -178,7 +181,7 @@ function useBudgetHelper(widgetProps: WidgetProps) {
         newCategoryList[groupIdx] = {
           ...newCategoryList[groupIdx],
           categories: newCats,
-          ...getGroupAmounts(newCats, false),
+          ...getGroupAmounts(newCats, true),
         };
 
         // log("new Group", {

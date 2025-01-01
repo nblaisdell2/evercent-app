@@ -4,18 +4,48 @@ import { getPercentString } from "../../../utils/util";
 import useEvercent from "../../../hooks/useEvercent";
 import {
   getAllCategoriesRegularExpenses,
+  getNumExpensesWithTargetMet,
   getRegularExpenses,
 } from "evercent/dist/category";
+import { log } from "../../../utils/log";
+import { Budget, getTotalBudgetedByMonthRegular } from "evercent/dist/budget";
+import { UserData } from "evercent/dist/user";
 
 function RegularExpensesWidget() {
-  const { userData, categoryGroups } = useEvercent();
+  const { userData, budget, categoryGroups } = useEvercent();
   if (!categoryGroups) return;
 
-  const regularExpenses = getRegularExpenses(categoryGroups);
+  let regularExpenses = getRegularExpenses(categoryGroups);
+  regularExpenses = regularExpenses.map((cg, i, arr) => {
+    return {
+      ...cg,
+      categories: cg.categories.map((c) => {
+        return {
+          ...c,
+          // monthsAhead: calculatemon
+          postingMonths: getTotalBudgetedByMonthRegular(
+            arr,
+            budget as Budget,
+            cg.groupID,
+            c.categoryID
+          ),
+        };
+      }),
+    };
+  });
+
+  const numExpensesWithTargetMet = getNumExpensesWithTargetMet(
+    regularExpenses,
+    userData?.monthsAheadTarget || 6,
+    budget as Budget,
+    userData as UserData
+  );
+
   const regExpenseCats = getAllCategoriesRegularExpenses(
     regularExpenses,
     false
   );
+  log({ regularExpenses, regExpenseCats });
   const numRegularExpenses = regExpenseCats.length;
   if (numRegularExpenses == 0) {
     return (
@@ -29,10 +59,10 @@ function RegularExpensesWidget() {
     );
   }
 
-  const numExpensesWithTargetMet = regExpenseCats.reduce((prev, curr) => {
-    if (curr.monthsAhead >= (userData?.monthsAheadTarget || 6)) return prev + 1;
-    return prev;
-  }, 0);
+  // const numExpensesWithTargetMet = regExpenseCats.reduce((prev, curr) => {
+  //   if (curr.monthsAhead >= (userData?.monthsAheadTarget || 6)) return prev + 1;
+  //   return prev;
+  // }, 0);
 
   return (
     <div className="h-full w-full flex flex-col justify-evenly">

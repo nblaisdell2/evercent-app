@@ -126,6 +126,13 @@ function BudgetHelperCharts({
               curr.groupName,
               { role: "tooltip", type: "string", p: { html: true } },
             ];
+            log("calculating percentages");
+            log({
+              grp: curr.groupName,
+              amt: curr.adjustedAmountPlusExtra,
+              monthlyIncome,
+              calc: curr.adjustedAmountPlusExtra / monthlyIncome,
+            });
             prev[1] = [
               ...prev[1],
               curr.adjustedAmountPlusExtra / monthlyIncome,
@@ -302,7 +309,8 @@ function BudgetHelperCharts({
     "category"
   );
 
-  // log({ chartDataGroup, chartDataCategory });
+  log("Chart DATA");
+  log({ chartDataGroup, chartDataCategory });
 
   let groupColors: any[] = [];
   for (let i = 1; i < (chartDataGroup[0].length - 1) / 2; i++) {
