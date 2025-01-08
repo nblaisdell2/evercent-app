@@ -10,7 +10,12 @@ import HierarchyTable, { CheckboxItem } from "../../elements/HierarchyTable";
 import Label from "../../elements/Label";
 import LabelAndValue from "../../elements/LabelAndValue";
 import MyButton from "../../elements/MyButton";
-import { getMoneyString, getPercentString, sum } from "../../../utils/util";
+import {
+  getDateOnly,
+  getMoneyString,
+  getPercentString,
+  sum,
+} from "../../../utils/util";
 import PostingMonthBreakdown from "../../other/PostingMonthBreakdown";
 import { RegularExpensesState } from "../../../hooks/useRegularExpenses";
 import useModal from "../../../hooks/useModal";
@@ -111,7 +116,7 @@ function RegularExpenseDetails({ reProps }: { reProps: RegularExpensesState }) {
         //   (c: any) => c.categoryID == item.id
         // )[0];
         const monthsCalc = postingMonths.filter(
-          (pm) => pm?.month !== startOfMonth(new Date()).toISOString()
+          (pm) => pm.month !== getDateOnly(startOfMonth(new Date()))
         );
         return (
           <div

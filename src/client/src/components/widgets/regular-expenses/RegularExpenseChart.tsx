@@ -3,7 +3,7 @@ import Card from "../../elements/Card";
 import { RegularExpensesState } from "../../../hooks/useRegularExpenses";
 import { addMonths, startOfMonth } from "date-fns";
 import useEvercent from "../../../hooks/useEvercent";
-import { roundNumber } from "../../../utils/util";
+import { getDateOnly, roundNumber } from "../../../utils/util";
 import { BudgetMonth } from "evercent/dist/budget";
 import { PayFrequency } from "evercent/dist/user";
 import {
@@ -39,18 +39,16 @@ function RegularExpenseChart({ reProps }: { reProps: RegularExpensesState }) {
       budget?.months as BudgetMonth[],
       userData?.payFrequency as PayFrequency,
       // @ts-ignore
-      addMonths(startOfMonth(new Date()), 1),
+      new Date(),
       category.postingMonths.length + 5
     );
     log("category: " + category.name, { category, calcPostingMonths });
 
     const monthsAhead = category.postingMonths.filter(
       (pm) =>
-        pm?.month !== startOfMonth(new Date()).toISOString() &&
+        pm.month !== getDateOnly(startOfMonth(new Date())) &&
         roundNumber(
-          calcPostingMonths.find(
-            (pm2) => pm2.month.substring(0, 10) == pm.month.substring(0, 10)
-          )?.amount || 0,
+          calcPostingMonths.find((pm2) => pm2.month == pm.month)?.amount || 0,
           2
         ) == roundNumber(pm.amount, 2)
     ).length;

@@ -71,6 +71,16 @@ const getUTCString = (parsedTime: string | number | Date) => {
   return formatInTimeZone(parsedTime, "UTC", "yyyy-MM-dd HH:mm:ss");
 };
 
+const getDateOnly = (dt: Date) => {
+  return (
+    dt.getFullYear().toString() +
+    "-" +
+    (dt.getMonth() + 1).toString().padStart(2, "0") +
+    "-" +
+    dt.getDate().toString().padStart(2, "0")
+  );
+};
+
 const checkAPIStatus = async (): Promise<EvercentResponse<string>> => {
   const msg = "API is up-and-running!";
   return {
@@ -80,23 +90,12 @@ const checkAPIStatus = async (): Promise<EvercentResponse<string>> => {
   };
 };
 
-const getStartOfDay = (strDate?: string) => {
-  const now = strDate ? new Date(strDate) : new Date();
-  const startOfDayUTC = new Date(
-    Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate())
-  );
-  return startOfDayUTC;
-};
-
 const getToday = async (): Promise<EvercentResponse<string>> => {
   const now = new Date();
-  const startOfDayUTC = new Date(
-    Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate())
-  );
   return {
-    data: startOfDayUTC.toISOString(),
+    data: getDateOnly(now),
     err: null,
-    message: startOfDayUTC.toISOString(),
+    message: now.toISOString(),
   };
 };
 

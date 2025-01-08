@@ -369,12 +369,13 @@ function useRegularExpenses(widgetProps: WidgetProps) {
     setDebugCategory(category.name);
 
     log("getting posting month for inc/dec");
+    log(addMonths(startOfDay(new Date()), 1));
     let calculated = getPostingMonths(
       category,
       budget?.months as BudgetMonth[],
       userData?.payFrequency as PayFrequency,
       // @ts-ignore
-      addMonths(startOfDay(new Date()), 1),
+      new Date(),
       currMonths.length + 1
     );
     log("increment/decrement", {

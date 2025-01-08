@@ -63,3 +63,13 @@ export function formatTimeAMPM(dt: Date) {
     (isPM ? "PM" : "AM")
   );
 }
+
+export const getDateOnly = (dt: Date) => {
+  return (
+    dt.getFullYear().toString() +
+    "-" +
+    (dt.getMonth() + 1).toString().padStart(2, "0") +
+    "-" +
+    dt.getDate().toString().padStart(2, "0")
+  );
+};

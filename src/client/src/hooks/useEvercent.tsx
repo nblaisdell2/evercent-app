@@ -172,60 +172,6 @@ function useEvercent() {
 
   if (data?.data) {
     evercentData = { ...data.data };
-
-    log("Am i doing something else?");
-
-    if (evercentData.budget) {
-      log("UPDATING BUDGET!!!");
-      evercentData.budget = {
-        ...evercentData.budget,
-        months: evercentData.budget.months.map((m) => {
-          return {
-            ...m,
-            month: getUpdatedDate(m.month),
-          };
-        }),
-      };
-
-      evercentData.categoryGroups = evercentData.categoryGroups.map((cg) => {
-        return {
-          ...cg,
-          categories: cg.categories.map((c) => {
-            return {
-              ...c,
-              postingMonths: c.postingMonths.map((pm) => {
-                return {
-                  ...pm,
-                  month: getUpdatedDate(pm.month),
-                };
-              }),
-            };
-          }),
-        };
-      });
-
-      evercentData.autoRuns = evercentData.autoRuns.map((ar) => {
-        return {
-          ...ar,
-          categoryGroups: ar.categoryGroups.map((cg) => {
-            return {
-              ...cg,
-              categories: cg.categories.map((c) => {
-                return {
-                  ...c,
-                  postingMonths: c.postingMonths.map((pm) => {
-                    return {
-                      ...pm,
-                      postingMonth: getUpdatedDate(pm.postingMonth),
-                    };
-                  }),
-                };
-              }),
-            };
-          }),
-        };
-      });
-    }
   }
 
   log(
